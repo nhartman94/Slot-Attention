@@ -5,6 +5,8 @@ Although hopefully extensible to some other problems as well.
 Nicole Hartman
 19th July 2023
 '''
+import numpy as np
+from scipy.ndimage import gaussian_filter
 
 class ToyProblem():
     
@@ -71,3 +73,107 @@ class ToyProblem():
             imgs[i] = np.histogram2d(*Xi.T, resolution, [(-4.5,4.5),(-4.5,4.5)])[0].reshape(1,*resolution,1) 
 
         return imgs, Y, X_photons
+
+def gen_events(
+    bins,
+    N_events = 100000,
+    N_clusters = 1,
+    #lam_n_clusters = 1.0,
+    #lam_N_events_in_cluster = 200.,
+    lam_noise = 0., #0.1
+    mean_var_cluster = np.log(0.001),
+    sigma_var_cluster = 0.1,
+    mean_lam_cluster = np.log(200.),
+    sigma_lam_cluster = 1.,
+    isRing=True,
+    mirrorSamples=False,
+    blurImage=False,
+    xlow=-.5,
+    xhigh=0.5,
+    stdlow=0.01,
+    stdhigh=0.05
+):
+    '''
+    Code from Florian
+    https://gitlab.lrz.de/neural_network_clustering/permutation_invariant_loss/-/blob/main/test_blur.ipynb
+    '''
+
+    eventHistograms = np.zeros(shape=(N_events, len(bins)-1, len(bins)-1,1) ) #, dtype=np.float32)
+    eventNumbers = np.zeros(N_events)
+
+    nMaxClusters = N_clusters   
+    
+    eventInfo = np.zeros(shape=(N_events, nMaxClusters, 4)) #, dtype=np.float32)
+    for iEvent in range(N_events):
+        
+        image = np.zeros_like(eventHistograms[iEvent,:,:,0])
+        
+        n_clusters = nMaxClusters
+
+        eventNumbers[iEvent] += n_clusters
+        eI = []
+        for iCluster in range(min(n_clusters,nMaxClusters)):
+            # how many events in this cluster
+
+            lam_N_events_in_cluster = 200. #min(np.random.lognormal(mean=mean_lam_cluster, sigma=sigma_lam_cluster),400)
+
+            N_events_in_cluster = np.random.poisson(lam_N_events_in_cluster)
+
+            # where is the cluster center
+            cluster_center = np.random.uniform(low=xlow, high=xhigh, size=2)
+
+            # what is the cluster spread
+            var_cluster = np.random.uniform(stdlow,stdhigh) #np.random.lognormal(mean=mean_var_cluster, sigma=sigma_var_cluster)
+
+            cluster_events_x0 = np.random.normal(loc=0., scale=1., size=N_events_in_cluster)
+            cluster_events_y0 = np.random.normal(loc=0., scale=1., size=N_events_in_cluster)
+
+            if isRing:
+                fact = np.sqrt(var_cluster/(cluster_events_x0**2+cluster_events_y0**2))
+            else:
+                fact = np.sqrt(var_cluster)
+
+            cluster_events_x = cluster_events_x0*fact + cluster_center[0]
+            cluster_events_y = cluster_events_y0*fact + cluster_center[1]
+            
+            # bin the events
+            H, _, _ = np.histogram2d(cluster_events_x, cluster_events_y, bins=[bins,bins])
+
+            image += H.T
+            
+            blur = np.random.uniform(0, 5.)*blurImage
+            image =  gaussian_filter(image,sigma=blur)
+            
+            eI.append(np.concatenate([cluster_center, [var_cluster,blur]]))
+
+        eventHistograms[iEvent,:,:,0] = np.copy(image)
+            
+        if lam_noise > 0:
+            eventHistograms[iEvent] += np.random.poisson(lam_noise, size=(len(bins)-1)**2).reshape((len(bins)-1, len(bins)-1))
+        #eventHistograms[iEvent] /= np.sum(eventHistograms[iEvent])
+        #norm = np.sum(eventHistograms[iEvent])
+        #if norm == 0:
+        #    norm = 1.
+        #if np.sum(eventHistograms[iEvent]) == 0:
+        #    print("help!!")
+        #eventHistograms[iEvent] /= norm
+ 
+        eventInfo[iEvent] = np.array(eI)
+    
+    if mirrorSamples:
+        
+        eventHistograms = np.concatenate([eventHistograms, eventHistograms[:,:,::-1], eventHistograms[:,::-1,:],eventHistograms[:,::-1,::-1]] )
+        
+        eventInfoFlippedX = np.copy(eventInfo)
+        eventInfoFlippedX[:,:,0] *= -1
+        
+        eventInfoFlippedY = np.copy(eventInfo)
+        eventInfoFlippedY[:,:,1] *= -1
+        
+        eventInfoFlippedXY = np.copy(eventInfo)
+        eventInfoFlippedXY[:,:,0] *= -1
+        eventInfoFlippedXY[:,:,1] *= -1
+        
+        eventInfo = np.concatenate([eventInfo, eventInfoFlippedX, eventInfoFlippedY, eventInfoFlippedXY])
+    
+    return eventInfo.astype('float32'), eventHistograms.astype('float32')
