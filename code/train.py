@@ -14,8 +14,10 @@ from scipy.optimize import linear_sum_assignment
 from model import SlotAttentionPosEmbed
 from data import make_batch
 from plotting import plot_kslots, plot_kslots_iters, plot_kslots_grads
+
 import os
 import yaml
+from argparse import ArgumentParser
 
 def hungarian_matching(att, mask,bs, k_slots,max_n_rings,nPixels):
     '''
@@ -48,12 +50,12 @@ def train(model,
           warmup_steps=10_000,
           decay_rate = 0.5,
           decay_steps = 100_000,
-          kwargs={},
+          kwargs={'isRings': True, 'N_clusters':3},
           device='cpu',
           plot_every=250, 
           save_every=1000,
           color='C0',cmap='Blues',
-          modelDir='',figDir='',pl):
+          modelDir='',figDir=''):
     '''
     train
     (Function from Lukas)
@@ -70,6 +72,7 @@ def train(model,
            lr * decay_rate^(step / decay_steps)
          If the decay rate is set to 1, no dec
     - decay_steps: Controls the timescale of the learning rate decay (see above)
+    - kwargs: dictionary of key word arguments to pass to the `make_batch` function
     - device: (default cpu) for data loading... needs to be the same as model
     - color,cmap: options that get passed the diagonistic plotting scripts
     - modelDir: Directory to save the models to as
@@ -84,6 +87,13 @@ def train(model,
     model.train()
     losses = []
     
+    k_slots = model.k_slots
+    resolution = model.resolution
+
+    max_n_rings = kwargs['N_clusters']
+    isRings = kwargs["isRings"]
+    print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRings else "blobs"))
+
     for i in range(Ntrain):
 
         learning_rate = base_learning_rate * decay_rate ** (i / decay_steps)
@@ -97,7 +107,7 @@ def train(model,
         queries, att, wts = model(X)
             
         with torch.no_grad():
-            indices = hungarian_matching(att,mask,bs,model.k_slots,max_n_rings,nPixels)
+            indices = hungarian_matching(att,mask,bs,k_slots,max_n_rings,resolution[0])
 
         # Apply the sorting to the predict
         bis=torch.arange(bs).to(device)
@@ -105,7 +115,7 @@ def train(model,
 
         slots_sorted = torch.cat([att[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
         
-        flat_mask = mask.reshape(-1,max_n_rings, prod(model.resolution))
+        flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))
         rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
 
         # Calculate the loss
@@ -117,26 +127,32 @@ def train(model,
 
         losses.append(float(loss))
         
-        if i % 250 == 0:
+        if i % plot_every == 0:
             print('iter',i,', loss',loss.detach().cpu().numpy(),', lr',opt.param_groups[0]['lr'])
             
             iEvt = 0
-            att_img = att[iEvt].reshape(model.k_slots,nPixels,nPixels)
+            att_img = att[iEvt].reshape(model.k_slots,*resolution)
             plot_kslots(losses, 
                         mask[iEvt].sum(axis=0).detach().cpu().numpy(), 
                         att_img.detach().cpu().numpy(),
-                        k_slots, color=color,cmap=cmap)
+                        k_slots, color=color,cmap=cmap,
+                        figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg')
             
             
-            plot_kslots_iters(model, X, iEvt=0)
-            plot_kslots_grads(model.gradients,iEvt=0)
+            plot_kslots_iters(model, X, iEvt=0, color=color,cmap=cmap, 
+                              figname=f'{figDir}/slots-unroll-iter{i}-evt{iEvt}.jpg')
+            plot_kslots_grads(model.gradients,iEvt=0, color=color,cmap=cmap,
+                              figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg')
+
+        if i % save_every == 0:
+            torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')
 
     model.eval()
     return model,losses
 
 if __name__ == "main":
 
-    parser = makeParser()
+    parser = ArgumentParser()
 
     parser.add_argument(
         "--config",
@@ -186,15 +202,26 @@ if __name__ == "main":
     # Check that we haven't trained these config files before
     modelID = config.replace('configs','').replace('.yaml','') 
     if os.path.exists(f'models/{modelID}'):
-        print('You ar')
+        print('This model has already been trained... returning') 
+        raise FileExistsError
 
+    modelDir = f'models/{modelID}'
+    figDir = f'figures/{modelID}'
+
+    for dir in [modelDir, figDir]: os.mkdir(dir)
 
     # Define the architecture 
-    model = SlotAttention(k_slots=k_slots,device=device,hidden_dim=16,query_dim=16).to(device)
-
+    hps['device'] = device # the model also needs to 
+    model = SlotAttentionPosEmbed(**hps).to(device)
 
     # Train the model 
-    # ?
+    train(model, 
+          **opt
+          kwargs={'isRings': True, 'N_clusters':3},
+          device=device,
+          plot_every=plot_every, 
+          save_every=save_every,
+          modelDir=modelDir,figDir=figDir)
 
 
 
