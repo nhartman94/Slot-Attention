@@ -53,7 +53,7 @@ class SlotAttentionPosEmbed(torch.nn.Module):
                  hidden_dim=32, 
                  query_dim=32, 
                  n_iter=2,
-                 T='defaultx10',
+                 softmax_T='defaultx10',
                  device='cpu' 
                  ):
         '''
@@ -77,19 +77,22 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         '''
         super().__init__()
 
+        
         self.k_slots = k_slots
         self.hidden_dim = hidden_dim
         self.query_dim = query_dim
         self.n_iter = n_iter
 
+        self.resolution = resolution
+
         self.device=device
         
-        assert T in ['default','defaultx10','1/D'] 
-        if T=='default':
-            self.softmax_T = 1/torch.sqrt(query_dim)
-        elif T=='default':
-            self.softmax_T = 10/torch.sqrt(query_dim)
-        elif T=='default':
+        assert softmax_T in ['default','defaultx10','1/D'] 
+        if softmax_T=='default':
+            self.softmax_T = 1/np.sqrt(query_dim)
+        elif softmax_T=='defaultx10':
+            self.softmax_T = 10/np.sqrt(query_dim)
+        elif softmax_T=='1/D':
             self.softmax_T = 1/query_dim
         else:
             print(f'Softmax temperature {T} not supported')

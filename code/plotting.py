@@ -8,7 +8,7 @@ import torch
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname=''):
+def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname='',showImg=True):
     
     fig, axs = plt.subplots(1,k_slots+2,figsize=(2.75 * (k_slots + 2) ,2.5))
 
@@ -33,9 +33,10 @@ def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname='')
 
     if figname:
         plt.savefig(figname)
-    plt.show()
+    if showImg:
+        plt.show()
 
-def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname=''):
+def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname='',showImg=True):
     '''
     Plot the attention masks across the iterations
     '''
@@ -86,10 +87,11 @@ def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname=''):
 
     if figname:
         plt.savefig(figname)  
-    plt.show()
+    if showImg:
+        plt.show()
 
 
-def plot_kslots_grads(grads, iEvt, model, color='C2',cmap='Greens',figname=''):
+def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname='',showImg=True):
     '''
     Plot the gradients across the attention maps
     '''
@@ -121,4 +123,5 @@ def plot_kslots_grads(grads, iEvt, model, color='C2',cmap='Greens',figname=''):
 
     if figname:
         plt.savefig(figname)    
-    plt.show()
+    if showImg:
+        plt.show()

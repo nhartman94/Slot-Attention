@@ -16,7 +16,7 @@ from data import make_batch
 from plotting import plot_kslots, plot_kslots_iters, plot_kslots_grads
 
 import os
-import yaml
+import yaml, json
 from argparse import ArgumentParser
 
 def hungarian_matching(att, mask,bs, k_slots,max_n_rings,nPixels):
@@ -47,15 +47,15 @@ def train(model,
           Ntrain = 5000, 
           bs=32, 
           lr=3e-4,
-          warmup_steps=10_000,
+          warmup_steps=5_000,
           decay_rate = 0.5,
-          decay_steps = 100_000,
-          kwargs={'isRings': True, 'N_clusters':3},
+          decay_steps = 50_000,
+          kwargs={'isRing': True, 'N_clusters':2},
           device='cpu',
           plot_every=250, 
           save_every=1000,
           color='C0',cmap='Blues',
-          modelDir='',figDir=''):
+          modelDir='.',figDir='',showImg=True):
     '''
     train
     (Function from Lukas)
@@ -89,10 +89,11 @@ def train(model,
     
     k_slots = model.k_slots
     resolution = model.resolution
+    kwargs['device'] = device
 
     max_n_rings = kwargs['N_clusters']
-    isRings = kwargs["isRings"]
-    print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRings else "blobs"))
+    isRing = kwargs["isRing"]
+    print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRing else "blobs"))
 
     for i in range(Ntrain):
 
@@ -136,21 +137,23 @@ def train(model,
                         mask[iEvt].sum(axis=0).detach().cpu().numpy(), 
                         att_img.detach().cpu().numpy(),
                         k_slots, color=color,cmap=cmap,
-                        figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg')
+                        figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg',showImg=showImg)
             
             
             plot_kslots_iters(model, X, iEvt=0, color=color,cmap=cmap, 
-                              figname=f'{figDir}/slots-unroll-iter{i}-evt{iEvt}.jpg')
-            plot_kslots_grads(model.gradients,iEvt=0, color=color,cmap=cmap,
-                              figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg')
+                              figname=f'{figDir}/slots-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
+            plot_kslots_grads(model,model.gradients,iEvt=0, color=color,cmap=cmap,
+                              figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
 
         if i % save_every == 0:
             torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')
+            with open(f'{modelDir}/loss.json','w') as f:
+                json.dump(losses, f)
 
     model.eval()
     return model,losses
 
-if __name__ == "main":
+if __name__ == "__main__":
 
     parser = ArgumentParser()
 
@@ -164,7 +167,7 @@ if __name__ == "main":
     parser.add_argument(
         "--device",
         dest="device",
-        type="str",
+        type=str,
         default='cuda:0'
     )
 
@@ -189,26 +192,25 @@ if __name__ == "main":
     plot_every = args.plot_every
     save_every = args.save_every
 
-    # Step 1: Retrieve the data loading fct(?)
-
-
     # Open up the configs file to retreive the parameters
-    with open(config, "r") as cfile:
-        cdict = json.load(cfile)
-
+    with open(config, "r")as cfile:
+        cdict = yaml.safe_load(cfile)
+    
     opt = cdict["opt"]
     hps = cdict["hps"]
+    kwargs = cdict["data"] # to pass to the data loading fct
 
     # Check that we haven't trained these config files before
     modelID = config.replace('configs','').replace('.yaml','') 
-    if os.path.exists(f'models/{modelID}'):
-        print('This model has already been trained... returning') 
-        raise FileExistsError
-
     modelDir = f'models/{modelID}'
     figDir = f'figures/{modelID}'
 
-    for dir in [modelDir, figDir]: os.mkdir(dir)
+    if os.path.exists(f'models/{modelID}'):
+        print(f'Warning: {modelDir} exitst -- this model might have already been trained.') 
+        # raise FileExistsError
+    else:
+        for dir in [modelDir, figDir]: 
+            os.mkdir(dir)
 
     # Define the architecture 
     hps['device'] = device # the model also needs to 
@@ -216,8 +218,8 @@ if __name__ == "main":
 
     # Train the model 
     train(model, 
-          **opt
-          kwargs={'isRings': True, 'N_clusters':3},
+          **opt,
+          kwargs=kwargs,
           device=device,
           plot_every=plot_every, 
           save_every=save_every,
