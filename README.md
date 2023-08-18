@@ -7,7 +7,7 @@
 - `Softmax-Temperature`: Looking at some experiments across varying the architecture size and softax temperature. This notebook just has loss curves rn, the other plots get saved in the corresponding `code/figures/{config-id}` folder
 - `Hungarian-multi-rings`: This notebook is ~ identical to the `Hungarian-multi-rings.ipynb`, but the models don't train long enough in the notebook to get nice figures. But... training for longer with the slurm batch system seems like some of these models are starting to converge, e.g, (although still needs more training time... which is in progress).
 
-<img src="code/figures/2rings-sqrtD/loss-slots-iter45500-evt0.jpg" style="height:300px"  />
+<img src="code/figures/2rings-sqrtD/loss-slots-iter45500-evt0.jpg"   />
 
 
 ### Multi-Blobs Hungarian Loss
