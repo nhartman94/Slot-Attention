@@ -6,17 +6,21 @@ Nicole Hartman
 Summer 2023
 '''
 
+# ML packages
 import numpy as np
 import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
+# custom code for this repo
 from model import SlotAttentionPosEmbed
 from data import make_batch
 from plotting import plot_kslots, plot_kslots_iters, plot_kslots_grads
 
+# file IO packages
 import os
 import yaml, json
+from glob import glob
 from argparse import ArgumentParser
 
 def hungarian_matching(att, mask,bs, k_slots,max_n_rings,nPixels):
@@ -50,6 +54,7 @@ def train(model,
           warmup_steps=5_000,
           decay_rate = 0.5,
           decay_steps = 50_000,
+          losses = [],
           kwargs={'isRing': True, 'N_clusters':2},
           device='cpu',
           plot_every=250, 
@@ -72,6 +77,7 @@ def train(model,
            lr * decay_rate^(step / decay_steps)
          If the decay rate is set to 1, no dec
     - decay_steps: Controls the timescale of the learning rate decay (see above)
+    - losses: If starting from a warm-start, a list of the previous losses to append to
     - kwargs: dictionary of key word arguments to pass to the `make_batch` function
     - device: (default cpu) for data loading... needs to be the same as model
     - color,cmap: options that get passed the diagonistic plotting scripts
@@ -85,7 +91,7 @@ def train(model,
     
     opt = torch.optim.Adam(model.parameters(), base_learning_rate)
     model.train()
-    losses = []
+    
     
     k_slots = model.k_slots
     resolution = model.resolution
@@ -95,7 +101,7 @@ def train(model,
     isRing = kwargs["isRing"]
     print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRing else "blobs"))
 
-    for i in range(Ntrain):
+    for i in range(len(losses),Ntrain):
 
         learning_rate = base_learning_rate * decay_rate ** (i / decay_steps)
         if i < warmup_steps:
@@ -185,12 +191,32 @@ if __name__ == "__main__":
         help="How many iteration steps to make between saving model checkpoints"
     )
 
+    # Parameters to start from a previous training
+    parser.add_argument(
+        "--warm_start",
+        action='store_true',
+        help="Whether to start this training from some previous weights"
+    )
+
+    parser.add_argument(
+        "--warm_start_config",
+        type=str,
+        default="",
+        help="The config file to start from for training with the warm start flag.\n"\
+            +"If this argument is not passed, will load in the model weights from\n" \
+            +"the last iteration of the file passed with the --config flag"
+    )
+
+
     args = parser.parse_args()
 
     config = args.config
     device = args.device
     plot_every = args.plot_every
     save_every = args.save_every
+
+    warm_start = args.warm_start
+    warm_start_config = args.warm_start_config
 
     # Open up the configs file to retreive the parameters
     with open(config, "r")as cfile:
@@ -205,25 +231,57 @@ if __name__ == "__main__":
     modelDir = f'models/{modelID}'
     figDir = f'figures/{modelID}'
 
-    if os.path.exists(f'models/{modelID}'):
-        print(f'Warning: {modelDir} exitst -- this model might have already been trained.') 
-        # raise FileExistsError
-    else:
-        for dir in [modelDir, figDir]: 
-            os.mkdir(dir)
+    if not os.path.exists(f'models/{modelID}'):
+        for newDir in [modelDir, figDir]: 
+            os.mkdir(newDir)
 
     # Define the architecture 
     hps['device'] = device # the model also needs to 
     model = SlotAttentionPosEmbed(**hps).to(device)
 
+    # Load in the weights 
+    if warm_start:
+
+        prev_config = warm_start_config if warm_start_config else config
+        prevID = prev_config.replace('configs','').replace('.yaml','') 
+
+        print(f'Starting from an earlier training from {prev_config}')
+
+        # Check for what was the last training iteration
+        modelChkpts = glob(f'models/{prevID}/m_*.pt')
+        if len(modelChkpts) == 0:
+            print('ERROR -- No files fround for',modelChkpts, 'when requesting to train from warm_start')
+            raise FileNotFoundError
+
+        savedIters = [mName.split('/')[-1].split('.')[0].split('_')[-1] for mName in modelChkpts   ]
+        savedIters = np.array([int(i) for i in savedIters])                     
+        lastIter = np.max(savedIters)
+
+        modelToLoad = f'models/{prevID}/m_{lastIter}.pt'
+
+        # Load in the weights
+        # https://pytorch.org/tutorials/beginner/saving_loading_models.html
+        # for the "save on gpu, load on gpu" cmd
+        model.load_state_dict(torch.load(modelToLoad))
+        model.to(device)
+        
+        # Also load in the losses if we're starting from the same config file
+        if len(warm_start_config) == 0:
+            with open(f'models/{prevID}/loss.json') as f:
+                losses = json.load(f)
+        else: 
+            losses = []
+
+    else: 
+        print('Training starting from freshly initialized weights')
+        losses = []
+
     # Train the model 
     train(model, 
           **opt,
+          losses=losses,
           kwargs=kwargs,
           device=device,
           plot_every=plot_every, 
           save_every=save_every,
           modelDir=modelDir,figDir=figDir)
-
-
-
