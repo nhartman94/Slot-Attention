@@ -101,7 +101,8 @@ def train(model,
     isRing = kwargs["isRing"]
     print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRing else "blobs"))
 
-    for i in range(len(losses),Ntrain):
+    start = len(losses)
+    for i in range(start,start+Ntrain):
 
         learning_rate = base_learning_rate * decay_rate ** (i / decay_steps)
         if i < warmup_steps:
@@ -146,10 +147,10 @@ def train(model,
                         figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg',showImg=showImg)
             
             
-            plot_kslots_iters(model, X, iEvt=0, color=color,cmap=cmap, 
-                              figname=f'{figDir}/slots-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
-            plot_kslots_grads(model,model.gradients,iEvt=0, color=color,cmap=cmap,
-                              figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
+            # plot_kslots_iters(model, X, iEvt=0, color=color,cmap=cmap, 
+            #                   figname=f'{figDir}/slots-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
+            # plot_kslots_grads(model,model.gradients,iEvt=0, color=color,cmap=cmap,
+            #                   figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
 
         if i % save_every == 0:
             torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')

@@ -65,10 +65,10 @@ os.system(f"sbatch {SLURM_DIR}/{job}.sh")
 '''
 
 # Test the temperature
-
-
-for ctag in ['muP-D','LHT','sqrtD']:
-    cID = f'2rings-{ctag}-long'
+#for ctag in ['muP-D','LHT','sqrtD']:
+for ctag in ['muP-D','sqrtD']:
+    cID = f'2rings-{ctag}'
     cmd = f"python train.py --config configs/{cID}.yaml --device cuda:0"
+    cmd += " --warm_start "
     writeSlurmFile(cmd, cID, useGPU=True)
     os.system(f"sbatch {SLURM_DIR}/{cID}.sh")

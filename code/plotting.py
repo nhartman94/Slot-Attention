@@ -35,6 +35,7 @@ def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname='',
         plt.savefig(figname)
     if showImg:
         plt.show()
+    plt.close()
 
 def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname='',showImg=True):
     '''
@@ -89,6 +90,7 @@ def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname='',sho
         plt.savefig(figname)  
     if showImg:
         plt.show()
+    plt.close()
 
 
 def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname='',showImg=True):
@@ -125,3 +127,4 @@ def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname='',sho
         plt.savefig(figname)    
     if showImg:
         plt.show()
+    plt.close()
