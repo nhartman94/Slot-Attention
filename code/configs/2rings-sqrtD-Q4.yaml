@@ -1,0 +1,11 @@
+data:
+  N_clusters: 2
+  isRing: true
+hps:
+  hidden_dim: 16
+  k_slots: 3
+  query_dim: 4
+  softmax_T: default
+opt:
+  Ntrain: 1000000
+  bs: 256
