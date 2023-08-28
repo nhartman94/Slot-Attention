@@ -82,7 +82,7 @@ def make_batch(
             eventMasks[iEvent,iCluster] = H.T
             image += H.T
                         
-            eI.append(np.concatenate([cluster_center, [var_cluster]]))
+            eI.append(np.concatenate([cluster_center, [np.sqrt(var_cluster)]]))
 
         eventHistograms[iEvent,:,:,0] = np.copy(image)
 
