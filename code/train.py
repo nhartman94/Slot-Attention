@@ -38,7 +38,7 @@ def hungarian_matching(att, mask,bs, k_slots,max_n_rings,nPixels):
     #pairwise_cost = pairwise_cost.reshape(bs, k_slots, max_n_rings)
     
     indices = list(map(linear_sum_assignment, pairwise_cost.cpu()))
-    indices = torch.LongTensor(indices)
+    indices = torch.LongTensor(np.array(indices))
     
     loss = 0
     for pi,(ri,ci) in zip(pairwise_cost,indices):
