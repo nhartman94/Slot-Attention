@@ -140,11 +140,13 @@ def train(model,
             
             iEvt = 0
             att_img = att[iEvt].reshape(model.k_slots,*resolution)
+
             plot_kslots(losses, 
                         mask[iEvt].sum(axis=0).detach().cpu().numpy(), 
                         att_img.detach().cpu().numpy(),
                         k_slots, color=color,cmap=cmap,
-                        figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg',showImg=showImg)
+                        figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg' if figDir else '',
+                        showImg=showImg)
             
             
             # plot_kslots_iters(model, X, iEvt=0, color=color,cmap=cmap, 
@@ -152,7 +154,7 @@ def train(model,
             # plot_kslots_grads(model,model.gradients,iEvt=0, color=color,cmap=cmap,
             #                   figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
 
-        if i % save_every == 0:
+        if (i % save_every == 0) and modelDir:
             torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')
             with open(f'{modelDir}/loss.json','w') as f:
                 json.dump(losses, f)
