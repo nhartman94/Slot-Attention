@@ -50,10 +50,15 @@ class SlotAttentionPosEmbed(torch.nn.Module):
     def __init__(self, 
                  resolution=(32,32),
                  k_slots=3, 
+                 num_conv_layers=3,
                  hidden_dim=32, 
+                 final_cnn_relu=False,
+                 learn_init=False,
                  query_dim=32, 
                  n_iter=2,
                  softmax_T='defaultx10',
+                 pixel_mult=1,
+                 pos_inpts=False,
                  device='cpu' 
                  ):
         '''
@@ -63,7 +68,9 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         - device (cpu (default), mps, cuda): Which device to put the model on 
                 (needed for the random call when initializing the slots)
         - k_slots (default 3): number of slots (note, can vary between training and test time)
+        - num_conv_layers: # of convolutional layers to apply (google paper has 4)
         - hidden_dim (default 32): The hidden dimension for the CNN (currently single layer w/ no non-linearities)
+        - final_cnn_relu: Whether to apply the final cnn relu for these experiments (use true to mimic google repo)
         - query_dim (default 32): The latent space dimension that the slots and the queries get computed in
         - n_iter (default  2): Number of slot attention steps to apply (defualt 2)
         - T (str): Softmax temperature for scaling the logits 
@@ -105,24 +112,57 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         self.toV = torch.nn.Linear(self.hidden_dim, self.query_dim)
         self.gru = torch.nn.GRUCell(self.query_dim, self.query_dim)
 
-        filter_size=5
-        self.CNN_encoder = torch.nn.Sequential(
-            torch.nn.Conv2d(1,self.hidden_dim,filter_size, padding = 2),
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(self.hidden_dim,self.hidden_dim,filter_size, padding = 2),
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(self.hidden_dim,self.hidden_dim,filter_size, padding = 2),
-        )
+        input_dim = 5 if pos_inpts else 1 # whether or not to include the pixels w/ the input
+        kwargs = { 'out_channels': hidden_dim,'kernel_size': 5, 'padding':2 }
+        cnn_layers = [torch.nn.Conv2d(input_dim,**kwargs)]
+        for i in range(num_conv_layers-1):
+            cnn_layers += [torch.nn.ReLU(), torch.nn.Conv2d(hidden_dim,**kwargs)] 
+            
+        if final_cnn_relu:
+            '''
+            22.08.2023 Silly mistake, I didn't include a ReLU() after the last CNN filter 
+            for first exps. This `final_cnn_relu` flag is a hack for bkwds compatibility.
+            '''
+            cnn_layers.append(torch.nn.ReLU())
+
+        self.CNN_encoder = torch.nn.Sequential(*cnn_layers)
+          
+        self.posEnc = SoftPositionalEmbed(hidden_dim, resolution,device, pixel_mult)
         
-        self.posEnc = SoftPositionalEmbed(hidden_dim, resolution,device)
-        
+        if pos_inpts:
+            self.process_data = lambda X: \
+                torch.cat([X,
+                torch.tile(self.posEnc.grid.permute(0,3,1,2), [X.shape[0],1,1,1])],dim=1)
+        else:
+            self.process_data = lambda X: X
+
         self.init_mlp = torch.nn.Sequential(
             torch.nn.Linear(hidden_dim,hidden_dim),
             torch.nn.ReLU(),
             torch.nn.Linear(hidden_dim,hidden_dim)
         )
+
+        if learn_init:
+            self.slots_mu = torch.nn.Parameter(torch.randn(1, 1, self.query_dim))
+            self.slots_logsigma = torch.nn.Parameter(torch.zeros(1, 1, self.query_dim))
+            init.xavier_uniform_(self.slots_logsigma)
+
+            self.init_slots = self.SA_init_slots
+
+        else:
+            self.init_slots = self.LH_init_slots
                 
-    def init_slots(self, Nbatch):
+    def SA_init_slots(self,Nbatch):
+        '''
+        Slot init taken from
+        https://github.com/lucidrains/slot-attention/blob/master/slot_attention/slot_attention.py
+        '''
+        mu = self.slots_mu.expand(Nbatch, self.k_slots, -1)
+        sigma = self.slots_logsigma.exp().expand(Nbatch, self.k_slots, -1)
+
+        return mu + sigma * torch.randn(mu.shape).to(self.device)
+
+    def LH_init_slots(self, Nbatch):
         noise = torch.randn(Nbatch, self.k_slots, self.query_dim).to(self.device)
         
         mu = torch.zeros(1,1,self.query_dim).to(self.device)
@@ -132,6 +172,9 @@ class SlotAttentionPosEmbed(torch.nn.Module):
     
     def encoder(self,data):
         
+        # If pos_inpts was passed at initialization, concatenate the grid
+        encoded_data = self.process_data(data)
+
         # Apply the CNN encoder
         encoded_data = self.CNN_encoder(data)
         
@@ -187,10 +230,9 @@ class SlotAttentionPosEmbed(torch.nn.Module):
     def forward(self, data):
 
         self.gradients = []
-        
-        Nbatch = data.shape[0]
-        
+    
         # Initialize the queries
+        Nbatch = data.shape[0]
         queries = self.init_slots(Nbatch) # Shape (Nbatch, k_slots, query_dim)
         
         encoded_data = self.encoder(data)
