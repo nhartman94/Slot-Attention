@@ -23,19 +23,15 @@ import yaml, json
 from glob import glob
 from argparse import ArgumentParser
 
-def hungarian_matching(att, mask,bs, k_slots,max_n_rings,nPixels):
+def hungarian_matching(pairwise_cost):
     '''
+    Input:
+    - pairwise_cost
+
+
     Hungarian section Translated from the TensorFlow loss function (from 2006.15055 code):
     https://github.com/nhartman94/google-research/blob/master/slot_attention/utils.py#L26-L57
     '''
-    
-    flat_mask = mask.reshape(-1,max_n_rings, nPixels*nPixels)[:,None,:,:]
-    
-    att_ext  = torch.tile(att.unsqueeze(2),  dims=(1,1,max_n_rings,1)) #.reshape(bs * k_slots * max_n_rings , nPixels**2)
-    mask_ext = torch.tile(flat_mask,dims=(1,k_slots,1,1)) #.reshape(bs * k_slots * max_n_rings , nPixels**2)
-    
-    pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
-    #pairwise_cost = pairwise_cost.reshape(bs, k_slots, max_n_rings)
     
     indices = list(map(linear_sum_assignment, pairwise_cost.cpu()))
     indices = torch.LongTensor(np.array(indices))
@@ -113,9 +109,18 @@ def train(model,
         X, Y, mask = make_batch(N_events=bs, **kwargs)
         
         queries, att, wts = model(X)
-            
+
         with torch.no_grad():
-            indices = hungarian_matching(att,mask,bs,k_slots,max_n_rings,resolution[0])
+
+            # Calculate the loss of _all_ possible combinations  
+            flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))[:,None,:,:]
+        
+            att_ext  = torch.tile(att.unsqueeze(2),  dims=(1,1,max_n_rings,1)) 
+            mask_ext = torch.tile(flat_mask,dims=(1,k_slots,1,1)) 
+
+            pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
+
+            indices = hungarian_matching(pairwise_cost)
 
         # Apply the sorting to the predict
         bis=torch.arange(bs).to(device)

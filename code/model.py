@@ -7,6 +7,7 @@ Code from Lukas Heinrich
 '''
 import numpy as np
 import torch
+from torch.nn import init
 
 def build_grid(resolution):
     '''
@@ -22,7 +23,7 @@ def build_grid(resolution):
     return np.concatenate([grid, 1.0 - grid], axis=-1)
 
 class SoftPositionalEmbed(torch.nn.Module):
-    def __init__(self,hidden_dim,resolution,device='cpu'):
+    def __init__(self,hidden_dim,resolution,device='cpu',pixel_mult=1):
         '''
         Given the dimensions of the input image, this layer adds 
         a residual connection for a _learnable projection_ of the
@@ -38,13 +39,14 @@ class SoftPositionalEmbed(torch.nn.Module):
         super().__init__()
         
         self.dense = torch.nn.Linear(4, hidden_dim)
-        
+        self.pixel_mult = pixel_mult
         grid = build_grid(resolution)
         self.grid = torch.FloatTensor( grid ).to(device)
         
+
     def forward(self, x):
         
-        return x + self.dense(self.grid)
+        return x + self.pixel_mult * self.dense(self.grid)
        
 class SlotAttentionPosEmbed(torch.nn.Module):
     def __init__(self, 
@@ -59,7 +61,8 @@ class SlotAttentionPosEmbed(torch.nn.Module):
                  softmax_T='defaultx10',
                  pixel_mult=1,
                  pos_inpts=False,
-                 device='cpu' 
+                 learn_slot_feat=False,
+                 device='cpu',
                  ):
         '''
         Slot attention encoder block with positional embedding
@@ -151,7 +154,19 @@ class SlotAttentionPosEmbed(torch.nn.Module):
 
         else:
             self.init_slots = self.LH_init_slots
-                
+
+        '''
+        Option to add a final (x,y,r) prediction to each slot
+        '''
+        self.learn_slot_feat = learn_slot_feat
+        if self.learn_slot_feat:
+            self.final_mlp = torch.nn.Sequential(
+                torch.nn.Linear(query_dim,hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(hidden_dim, 3)
+            )
+
+
     def SA_init_slots(self,Nbatch):
         '''
         Slot init taken from
@@ -243,4 +258,9 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         # Then with the _final_ query vector, calc what the attn + weights would be
         att, wts = self.attention_and_weights(self.queryN(queries),encoded_data)   
             
-        return queries, att,wts #.reshape(-1,self.k_slots,nPixels,nPixels)
+        if self.learn_slot_feat:
+            slot_feat = self.final_mlp(queries)
+            return queries, att, slot_feat 
+        
+        else:
+            return queries, att, wts
