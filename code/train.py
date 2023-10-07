@@ -42,15 +42,59 @@ def hungarian_matching(pairwise_cost):
     
     return indices 
 
+def expDecaySchedule(base_learning_rate, Ntrain,warmup_steps,decay_rate,decay_steps):
+    '''
+    Exponential weight deceay (w/ linear warmup)
+    '''
+
+    xx = np.linspace(0,Ntrain,Ntrain)
+
+    lr = base_learning_rate * np.power(decay_rate, xx / decay_steps)
+    lr *= np.where(xx < warmup_steps, xx/warmup_steps,1)
+
+    return lr
+
+def cosineSchedule(base_learning_rate, T, warmup_steps):
+    '''
+    Cosine dcay (w/ linear warm up)
+
+    Inputs:
+    - base_learning_rate: max lr
+    - T: Maximum number of training steps
+    - warm_up steps
+    
+    Output:
+    - lr: vector of len T of the lr at each iter
+    
+    '''
+    
+    xx = np.linspace(0,T,T)
+
+    lr = base_learning_rate
+    lr *= .5 * (1 + np.cos(xx * np.pi / T))
+    lr *= np.where(xx < warmup_steps, xx/warmup_steps,1)
+
+    return lr
+
+def img_entropy(mask):
+    
+    entropy = mask * torch.log(torch.where(mask==0, 1., mask.double()))
+    entropy = - entropy.sum(dim=1).mean(dim=[1,2]) # sum over slots, mean over pixels
+
+    return entropy.float()
+
 
 def train(model, 
           Ntrain = 5000, 
           bs=32, 
           lr=3e-4,
+          weightDecaySchedule='cosine',
           warmup_steps=5_000,
           decay_rate = 0.5,
           decay_steps = 50_000,
+        #   loss_def='kl_div',
           losses = [],
+          clip_val=1,
           kwargs={'isRing': True, 'N_clusters':2},
           device='cpu',
           plot_every=250, 
@@ -67,6 +111,7 @@ def train(model,
     - bs: batch size to use for the sampling
     - lr: The base learning rate for training with adam
         (although this learning rate gets modified w/ the subsequent optimizer schedules)
+    - weightDecaySchedule: cosine or exponential
     - warmup_steps: steps over which you gradually ramp up the learning rate
         If 0 is passed, the warm-up will never be activated
     - decay_rate: factor for an exponential decay schedule:
@@ -75,6 +120,7 @@ def train(model,
     - decay_steps: Controls the timescale of the learning rate decay (see above)
     - losses: If starting from a warm-start, a list of the previous losses to append to
     - kwargs: dictionary of key word arguments to pass to the `make_batch` function
+    - clip_val: Value to use for "gradient clipping" (default 5)
     - device: (default cpu) for data loading... needs to be the same as model
     - color,cmap: options that get passed the diagonistic plotting scripts
     - modelDir: Directory to save the models to as
@@ -82,12 +128,28 @@ def train(model,
     - figDir: Directory to save the figures to
     '''
 
+    
+    loss_fct = torch.nn.BCELoss(reduction='none')
+    # assert (loss_def == 'kl_div') or (loss_def == 'BCE')
+    # if loss_def == 'kl_div':
+    #     loss_fct = torch.nn.KLDivLoss(reduction='none')
+    # elif loss_def == 'BCE':
+    #     loss_fct = 
+    # else:
+    #     print('Error, loss_def must be kl_div or BCE,',loss_def,'not supported')
+    #     raise NotImplementedError
+
     # Learning rate schedule config
-    base_learning_rate = lr
+    if weightDecaySchedule == 'cosine':   
+        lrs = cosineSchedule(lr, Ntrain, warmup_steps)
+    elif weightDecaySchedule == 'exp':
+        lrs = expDecaySchedule(lr, Ntrain,warmup_steps,decay_rate,decay_steps)
+    else:
+        print('Error, weightDecaySchedule must be cosine or exp,',weightDecaySchedule,'not supported')
+        raise NotImplementedError
     
-    opt = torch.optim.Adam(model.parameters(), base_learning_rate)
+    opt = torch.optim.Adam(model.parameters())
     model.train()
-    
     
     k_slots = model.k_slots
     resolution = model.resolution
@@ -97,14 +159,9 @@ def train(model,
     isRing = kwargs["isRing"]
     print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRing else "blobs"))
 
-    start = len(losses)
-    for i in range(start,start+Ntrain):
+    for i, lr_i in enumerate(lrs):
 
-        learning_rate = base_learning_rate * decay_rate ** (i / decay_steps)
-        if i < warmup_steps:
-            learning_rate *= (i / warmup_steps)
-        
-        opt.param_groups[0]['lr'] = learning_rate
+        opt.param_groups[0]['lr'] = lr_i
         
         X, Y, mask = make_batch(N_events=bs, **kwargs)
         
@@ -118,7 +175,7 @@ def train(model,
             att_ext  = torch.tile(att.unsqueeze(2),  dims=(1,1,max_n_rings,1)) 
             mask_ext = torch.tile(flat_mask,dims=(1,k_slots,1,1)) 
 
-            pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
+            pairwise_cost = loss_fct(att_ext,mask_ext).mean(axis=-1)
 
             indices = hungarian_matching(pairwise_cost)
 
@@ -132,16 +189,20 @@ def train(model,
         rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
 
         # Calculate the loss
-        loss = F.binary_cross_entropy(slots_sorted,rings_sorted,reduction='none').sum(axis=1).mean()
-        
+        loss = loss_fct(slots_sorted,rings_sorted).sum(axis=1).mean(axis=1)
+        loss -= img_entropy(mask)
+        loss = loss.mean()
+
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_val)
+   
         opt.step()
         opt.zero_grad()
 
         losses.append(float(loss))
         
         if i % plot_every == 0:
-            print('iter',i,', loss',loss.detach().cpu().numpy(),', lr',opt.param_groups[0]['lr'])
+            print('iter',i,', loss',loss.detach().cpu().numpy(),', lr',lr_i)
             
             iEvt = 0
             att_img = att[iEvt].reshape(model.k_slots,*resolution)
@@ -207,6 +268,15 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--iter_to_load",
+        type=int,
+        default=-1,
+        help="Which iteration to load in for the warm start training.\n"\
+            +"Default (-1) will load in the last available model.\n"\
+            +"Only used if `--warm_start` is passed."
+    )
+
+    parser.add_argument(
         "--warm_start_config",
         type=str,
         default="",
@@ -224,6 +294,7 @@ if __name__ == "__main__":
     save_every = args.save_every
 
     warm_start = args.warm_start
+    iter_to_load = args.iter_to_load
     warm_start_config = args.warm_start_config
 
     # Open up the configs file to retreive the parameters
@@ -238,10 +309,12 @@ if __name__ == "__main__":
     modelID = config.replace('configs','').replace('.yaml','') 
     modelDir = f'models/{modelID}'
     figDir = f'figures/{modelID}'
-
-    if not os.path.exists(f'models/{modelID}'):
-        for newDir in [modelDir, figDir]: 
+    
+    for newDir in [modelDir, figDir]: 
+        try:
             os.mkdir(newDir)
+        except FileExistsError:
+            print(newDir,'already exists')
 
     # Define the architecture 
     hps['device'] = device # the model also needs to 
@@ -255,17 +328,22 @@ if __name__ == "__main__":
 
         print(f'Starting from an earlier training from {prev_config}')
 
-        # Check for what was the last training iteration
-        modelChkpts = glob(f'models/{prevID}/m_*.pt')
-        if len(modelChkpts) == 0:
-            print('ERROR -- No files fround for',modelChkpts, 'when requesting to train from warm_start')
-            raise FileNotFoundError
+        if iter_to_load == -1:
+            # Check for what was the last training iteration
+            modelChkpts = glob(f'models/{prevID}/m_*.pt')
+            if len(modelChkpts) == 0:
+                print('ERROR -- No files fround for',modelChkpts, 'when requesting to train from warm_start')
+                raise FileNotFoundError
 
-        savedIters = [mName.split('/')[-1].split('.')[0].split('_')[-1] for mName in modelChkpts   ]
-        savedIters = np.array([int(i) for i in savedIters])                     
-        lastIter = np.max(savedIters)
+            savedIters = [mName.split('/')[-1].split('.')[0].split('_')[-1] for mName in modelChkpts   ]
+            savedIters = np.array([int(i) for i in savedIters])                     
+            lastIter = np.max(savedIters)
 
-        modelToLoad = f'models/{prevID}/m_{lastIter}.pt'
+            modelToLoad = f'models/{prevID}/m_{lastIter}.pt'
+        else:
+            modelToLoad = f'models/{prevID}/m_{iter_to_load}.pt'
+            if not os.path.exists(modelToLoad):
+                print('Error asking to load',modelToLoad,'but it doesn\'t exist. Returning.')
 
         # Load in the weights
         # https://pytorch.org/tutorials/beginner/saving_loading_models.html
