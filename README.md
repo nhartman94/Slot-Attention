@@ -34,13 +34,6 @@ I wanted to get a feeling where the loss was coming from
     * Ran out of the box for blobs
     * The default hps / training times didn't work for rings
 
-### Working in tensorflow in the official repo (with Sara)
-
-- `Toy-prob.ipynb`: a toy 2 photon case working with slot attention with the official google TensorFlow repo.
-
-This notebook also needs the `slot_attention/model.py` to with a class `SlotAttentionSara` to have the 9x9 grid dimesnionalty in my clone of the offical google repo:
-`git clone https://github.com/nhartman94/google-research.git`
-
 ## Code
 
 The useful functions that are used across notebooks are in the `code repo`, and I started submitting trainings to grid jobs too.
