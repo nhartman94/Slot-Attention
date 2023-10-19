@@ -92,7 +92,6 @@ def train(model,
           warmup_steps=5_000,
           decay_rate = 0.5,
           decay_steps = 50_000,
-        #   loss_def='kl_div',
           losses = [],
           clip_val=1,
           kwargs={'isRing': True, 'N_clusters':2},
@@ -130,14 +129,6 @@ def train(model,
 
     
     loss_fct = torch.nn.BCELoss(reduction='none')
-    # assert (loss_def == 'kl_div') or (loss_def == 'BCE')
-    # if loss_def == 'kl_div':
-    #     loss_fct = torch.nn.KLDivLoss(reduction='none')
-    # elif loss_def == 'BCE':
-    #     loss_fct = 
-    # else:
-    #     print('Error, loss_def must be kl_div or BCE,',loss_def,'not supported')
-    #     raise NotImplementedError
 
     # Learning rate schedule config
     if weightDecaySchedule == 'cosine':   
@@ -189,9 +180,7 @@ def train(model,
         rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
 
         # Calculate the loss
-        loss = loss_fct(slots_sorted,rings_sorted).sum(axis=1).mean(axis=1)
-        loss -= img_entropy(mask)
-        loss = loss.mean()
+        loss = loss_fct(slots_sorted,rings_sorted).sum(axis=1).mean()
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_val)
