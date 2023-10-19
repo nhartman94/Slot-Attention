@@ -91,11 +91,30 @@ os.system(f"sbatch {SLURM_DIR}/{job}.sh")
 #    os.system(f"sbatch {SLURM_DIR}/{cID}-10k-decay.sh")
 
 # Try increasing the # iters you're solving the problem in
-for T in [2,3,4,5]:
-    cID = f'2rings-T{T}'
+# for T in [2,3,4,5]:
+#     cID = f'2rings-T{T}'
+#     cmd = f"python train.py --config configs/{cID}.yaml --device cuda:0"
+#     cmd += f" --warm_start --warm_start_config configs/2rings-sqrtD.yaml"
+#     writeSlurmFile(cmd, cID, useGPU=True)
+#     os.system(f"sbatch {SLURM_DIR}/{cID}.sh")
+
+
+# 16.09.23 warm start, kl div but a smaller learning rate 
+# for sched in ['cos','exp']:
+#     cID = f'kl-small-lr-{sched}'
+#     cmd = f"python train.py --config configs/{cID}.yaml --device cuda:0"
+#     cmd += f" --warm_start --warm_start_config configs/learn-init-warm2.yaml"
+#     writeSlurmFile(cmd, cID, useGPU=True)
+#     os.system(f"sbatch {SLURM_DIR}/{cID}.sh")
+
+# I _know_ the centroids get more similar with this learn-init-warm2 file
+# So I'm going to try starting from some earlier points in the training
+for i in [0,25_000,50_000,75_000,100_000]:
+
+    cID_base = 'kl-small-lr-cos'
+    cID = f'{cID_base}-{i}'
+    os.system(f'cp configs/{cID_base}.yaml configs/{cID}.yaml')
     cmd = f"python train.py --config configs/{cID}.yaml --device cuda:0"
-    cmd += f" --warm_start --warm_start_config configs/2rings-sqrtD.yaml"
+    cmd += f" --warm_start --iter_to_load {i} --warm_start_config configs/learn-init-warm2.yaml"
     writeSlurmFile(cmd, cID, useGPU=True)
     os.system(f"sbatch {SLURM_DIR}/{cID}.sh")
-
-
