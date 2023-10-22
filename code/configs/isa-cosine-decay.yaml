@@ -9,4 +9,5 @@ hps:
 opt:
   lr: 3.e-4
   Ntrain: 40_000
+  alpha:1
   bs: 256
