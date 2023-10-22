@@ -8,7 +8,68 @@ import torch
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname='',showImg=True):
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import Circle
+
+def plot_chosen_slots(losses, mask, att_img, Y_true, Y_pred, color='C0',cmap='Blues',figname=''):
+    n_rings = att_img.shape[0]
+    fig, axs = plt.subplots(1,n_rings+2,figsize=(3*(n_rings + 2) ,2.5))
+
+    for k,v in losses.items():
+        axs[0].plot(v,label=k)
+    axs[0].set_xlabel('Iters')
+    axs[0].set_ylabel('Loss')
+    axs[0].legend()
+    
+    imgs   = [mask] + [att_img[i] for i in range(n_rings)]
+    titles = ['Target']+[f'Slot {i}' for i in range(n_rings)]
+    extent = [-0.5, 0.5]*2
+    for i, (ax,img,title) in enumerate(zip(axs[1:],imgs, titles)):
+        
+        im = ax.imshow(img.detach().cpu().numpy(),cmap=cmap,
+                       extent=extent,origin='lower') #,vmin=0,vmax=1)
+
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        fig.colorbar(im, cax=cax, orientation='vertical')
+
+        ax.set_title(title)
+        
+
+    # Add on the target image
+    axi = axs[1]
+    c_true = 'r'
+    c_pred = 'k'
+    for yi in Y_true.cpu().numpy():
+    
+        axi.scatter(*yi[:2],marker='x',color=c_true)
+        circle = Circle(yi[:2],yi[2],fill=False,color=c_true)
+        axi.add_patch(circle)
+        
+        axi.set_xlim(-0.5,0.5)
+        axi.set_ylim(-0.5,0.5)
+    
+    for axi,yi,oi in zip(axs[2:],Y_true.cpu().numpy(),Y_pred.detach().cpu().numpy()):
+        
+        axi.scatter(*yi[:2],marker='x',color=c_true)
+        circle = Circle(yi[:2],yi[2],fill=False,color=c_true)
+        axi.add_patch(circle)
+        
+        axi.scatter(*oi[:2],marker='x',color=c_pred)
+        circle = Circle(oi[:2],oi[2],fill=False,color=c_pred)
+        axi.add_patch(circle)
+
+        axi.set_xlim(-0.5,0.5)
+        axi.set_ylim(-0.5,0.5)
+        
+    if figname:
+        plt.savefig(figname)
+
+    plt.show()
+    plt.close()
+
+def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname=''):
     
     fig, axs = plt.subplots(1,k_slots+2,figsize=(2.75 * (k_slots + 2) ,2.5))
 
@@ -33,11 +94,10 @@ def plot_kslots(losses, mask, att, k_slots, color='C2',cmap='Greens',figname='',
 
     if figname:
         plt.savefig(figname)
-    if showImg:
-        plt.show()
+    plt.show()
     plt.close()
 
-def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname='',showImg=True):
+def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname=''):
     '''
     Plot the attention masks across the iterations
     '''
@@ -88,12 +148,11 @@ def plot_kslots_iters(model, data, iEvt, color='C2',cmap='Greens',figname='',sho
 
     if figname:
         plt.savefig(figname)  
-    if showImg:
-        plt.show()
+    plt.show()
     plt.close()
 
 
-def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname='',showImg=True):
+def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname=''):
     '''
     Plot the gradients across the attention maps
     '''
@@ -125,6 +184,5 @@ def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname='',sho
 
     if figname:
         plt.savefig(figname)    
-    if showImg:
-        plt.show()
+    plt.show()
     plt.close()
