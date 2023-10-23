@@ -38,13 +38,13 @@ def writeSlurmFile(pythonCmd, job_name, useGPU=True):
     f.write("module purge\n")
 
     # Create and load conda environment
-    f.write("module load anaconda/3/2021.11 # <-> python 3.9.")
-    f.write("module load cuda/11.6")
-    f.write("module load cudnn/8.8")
-    f.write("module load pytorch/gpu-cuda-11.6/2.0.0")
+    f.write("module load anaconda/3/2021.11 # <-> python 3.9.\n")
+    f.write("module load cuda/11.6\n")
+    f.write("module load cudnn/8.8\n")
+    f.write("module load pytorch/gpu-cuda-11.6/2.0.0\n")
     
-    f.write("conda env create -f gpu_env.yaml")
-    f.write("conda activate gpu_env")
+    f.write("conda env create -f gpu_env.yaml\n")
+    f.write("conda activate gpu_env\n")
     
     f.write("pwd\n")
     
