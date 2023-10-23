@@ -1,0 +1,31 @@
+Traceback (most recent call last):
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train.py", line 11, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-alpha2
+Node list: ravg1203
+Job start: Mon Oct 23 15:23:37 CEST 2023
+Job end:   Mon Oct 23 15:23:41 CEST 2023
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha2.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+7623026       isa-alpha2      1             8                             00:00:04      1:0
+  
+Maximum memory per node: 0.001329 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 0.0 %
+  
