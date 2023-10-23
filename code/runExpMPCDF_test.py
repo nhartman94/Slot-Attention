@@ -38,10 +38,13 @@ def writeSlurmFile(pythonCmd, job_name, useGPU=True):
     f.write("module purge\n")
 
     # Create and load conda environment
-    f.write("conda create --name myenv python=3.9.7\n")
-    f.write("conda activate myenv\n")
-    f.write("pwd\n")
-    f.write("pip install -r requirements1.txt\n\n")
+    f.write("module load anaconda/3/2021.11 # <-> python 3.9.\n")
+    f.write("module load cuda/11.6\n")
+    f.write("module load cudnn/8.8\n")
+    f.write("module load pytorch/gpu-cuda-11.6/2.0.0\n")
+    
+    f.write("conda env create -f gpu_env.yaml\n")
+    f.write("conda activate gpu_env\n")
     
     f.write("pwd\n")
     
@@ -55,7 +58,7 @@ if not os.path.exists(SLURM_DIR):
 
 # NH: 22.10.23
 # ISA model with L_tot = L_bce + alpha + L_mse
-for alpha in [3]:
+for alpha in [1,2]:
 
     cID = f'isa-alpha{alpha}'
     cmd = f"python train.py --config configs/{cID}.yaml --warm_start"
