@@ -1,4 +1,4 @@
-name: gpu_env5
+name: gpu_env
 channels:
 - nvidia
 - pytorch # needs to be before conda-forge
