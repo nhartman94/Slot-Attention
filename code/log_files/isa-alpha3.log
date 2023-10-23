@@ -1,0 +1,41 @@
+/var/spool/slurmd/job7623656/slurm_script: line 12: conda: command not found
+/var/spool/slurmd/job7623656/slurm_script: line 13: conda: command not found
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+Defaulting to user installation because normal site-packages is not writeable
+Collecting asttokens==2.4.0
+  Using cached asttokens-2.4.0-py2.py3-none-any.whl (27 kB)
+Collecting backcall==0.2.0
+  Using cached backcall-0.2.0-py2.py3-none-any.whl (11 kB)
+Collecting comm==0.1.4
+  Using cached comm-0.1.4-py3-none-any.whl (6.6 kB)
+ERROR: Could not find a version that satisfies the requirement contourpy==1.1.1 (from -r requirements1.txt (line 4)) (from versions: none)
+ERROR: No matching distribution found for contourpy==1.1.1 (from -r requirements1.txt (line 4))
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+/var/spool/slurmd/job7623656/slurm_script: line 18: python: command not found
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-alpha3
+Node list: ravg1015
+Job start: Mon Oct 23 17:37:31 CEST 2023
+Job end:   Mon Oct 23 17:37:35 CEST 2023
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha3.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+7623656       isa-alpha3      1             8                             00:00:04    127:0
+  
+Maximum memory per node: 0.001375 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 0.0 %
+  
