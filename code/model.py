@@ -118,13 +118,7 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         cnn_layers = [torch.nn.Conv2d(input_dim,**kwargs)]
         for i in range(num_conv_layers-1):
             cnn_layers += [torch.nn.ReLU(), torch.nn.Conv2d(hidden_dim,**kwargs)] 
-            
-        if final_cnn_relu:
-            '''
-            22.08.2023 Silly mistake, I didn't include a ReLU() after the last CNN filter 
-            for first exps. This `final_cnn_relu` flag is a hack for bkwds compatibility.
-            '''
-            cnn_layers.append(torch.nn.ReLU())
+        cnn_layers.append(torch.nn.ReLU())
 
         self.CNN_encoder = torch.nn.Sequential(*cnn_layers)
           
