@@ -1,17 +1,111 @@
-/var/spool/slurmd/job7623656/slurm_script: line 12: conda: command not found
-/var/spool/slurmd/job7623656/slurm_script: line 13: conda: command not found
+
+CondaValueError: prefix already exists: /u/saumi/conda-envs/gpu_env
+
+
+CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+To initialize your shell, run
+
+    $ conda init <SHELL_NAME>
+
+Currently supported shells are:
+  - bash
+  - fish
+  - tcsh
+  - xonsh
+  - zsh
+  - powershell
+
+See 'conda init --help' for more information and options.
+
+IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+
+
 /raven/u/saumi/multi-object-detection/Slot-Attention/code
-Defaulting to user installation because normal site-packages is not writeable
-Collecting asttokens==2.4.0
-  Using cached asttokens-2.4.0-py2.py3-none-any.whl (27 kB)
-Collecting backcall==0.2.0
-  Using cached backcall-0.2.0-py2.py3-none-any.whl (11 kB)
-Collecting comm==0.1.4
-  Using cached comm-0.1.4-py3-none-any.whl (6.6 kB)
-ERROR: Could not find a version that satisfies the requirement contourpy==1.1.1 (from -r requirements1.txt (line 4)) (from versions: none)
-ERROR: No matching distribution found for contourpy==1.1.1 (from -r requirements1.txt (line 4))
-/raven/u/saumi/multi-object-detection/Slot-Attention/code
-/var/spool/slurmd/job7623656/slurm_script: line 18: python: command not found
+/raven/u/saumi/multi-object-detection/Slot-Attention/code/data.py:94: RuntimeWarning: invalid value encountered in true_divide
+  eventMasks = np.where(eventHistograms>0,eventMasks/eventHistograms,eventMasks)
+models//isa-alpha3 already exists
+figures//isa-alpha3 already exists
+Starting from an earlier training from configs/isa-cosine-decay.yaml
+iter 250 , loss 0.22191109 , lr 1.4994217771805423e-05
+iter 500 , loss 0.17612877 , lr 2.9953760005996917e-05
+iter 750 , loss 0.13805461 , lr 4.484404028148584e-05
+iter 1000 , loss 0.13218313 , lr 5.963065021785413e-05
+iter 1250 , loss 0.115622446 , lr 7.427944801512113e-05
+iter 1500 , loss 0.10593226 , lr 8.875664641789544e-05
+iter 1750 , loss 0.09175159 , lr 0.00010302889991381646
+iter 2000 , loss 0.08869762 , lr 0.00011706339097770922
+iter 2250 , loss 0.08072876 , lr 0.00013082791517476767
+iter 2500 , loss 0.0665728 , lr 0.0001442909649383465
+iter 2750 , loss 0.0627034 , lr 0.00015742181184056923
+iter 3000 , loss 0.074046224 , lr 0.00017019058717695308
+iter 3250 , loss 0.055609554 , lr 0.00018256836068959774
+iter 3500 , loss 0.051086828 , lr 0.00019452721725717964
+iter 3750 , loss 0.04462961 , lr 0.00020604033138403634
+iter 4000 , loss 0.062491618 , lr 0.0002170820393249937
+iter 4250 , loss 0.045989893 , lr 0.00022762790868729492
+iter 4500 , loss 0.05619133 , lr 0.0002376548053560042
+iter 4750 , loss 0.04910456 , lr 0.00024714095759458514
+iter 5000 , loss 0.068954185 , lr 0.00025606601717798207
+iter 5250 , loss 0.060572412 , lr 0.0002518201118299413
+iter 5500 , loss 0.04995612 , lr 0.00024741720724952754
+iter 5750 , loss 0.041438263 , lr 0.00024286409239647507
+iter 6000 , loss 0.066483244 , lr 0.00023816778784387094
+iter 6250 , loss 0.06193332 , lr 0.00023333553495294033
+iter 6500 , loss 0.041468434 , lr 0.0002283747847073923
+iter 6750 , loss 0.04957699 , lr 0.00022329318622454325
+iter 7000 , loss 0.055514917 , lr 0.00021809857496093199
+iter 7250 , loss 0.051048953 , lr 0.0002127989606306142
+iter 7500 , loss 0.048890267 , lr 0.00020740251485476345
+iter 7750 , loss 0.03960836 , lr 0.00020191755856162393
+iter 8000 , loss 0.043634165 , lr 0.0001963525491562421
+iter 8250 , loss 0.045630097 , lr 0.00019071606747976113
+iter 8500 , loss 0.04035174 , lr 0.0001850168045783858
+iter 8750 , loss 0.039170854 , lr 0.00017926354830241924
+iter 9000 , loss 0.033388555 , lr 0.00017346516975603462
+iter 9250 , loss 0.03591095 , lr 0.00016763060961867566
+iter 9500 , loss 0.031799585 , lr 0.00016176886435917675
+iter 9750 , loss 0.03882344 , lr 0.0001558889723638603
+iter 10000 , loss 0.038822606 , lr 0.00015
+iter 10250 , loss 0.035078403 , lr 0.0001441110276361397
+iter 10500 , loss 0.028371245 , lr 0.00013823113564082325
+iter 10750 , loss 0.034542732 , lr 0.0001323693903813244
+iter 11000 , loss 0.03823432 , lr 0.0001265348302439654
+iter 11250 , loss 0.04269771 , lr 0.00012073645169758072
+iter 11500 , loss 0.031699315 , lr 0.0001149831954216142
+iter 11750 , loss 0.031561915 , lr 0.00010928393252023886
+iter 12000 , loss 0.053528033 , lr 0.0001036474508437579
+iter 12250 , loss 0.034829006 , lr 9.808244143837605e-05
+iter 12500 , loss 0.0450008 , lr 9.259748514523656e-05
+iter 12750 , loss 0.035496537 , lr 8.720103936938576e-05
+iter 13000 , loss 0.04673159 , lr 8.190142503906798e-05
+iter 13250 , loss 0.03610617 , lr 7.670681377545674e-05
+iter 13500 , loss 0.04056973 , lr 7.162521529260767e-05
+iter 13750 , loss 0.039883327 , lr 6.66644650470597e-05
+iter 14000 , loss 0.047375884 , lr 6.183221215612904e-05
+iter 14250 , loss 0.04311358 , lr 5.7135907603524936e-05
+iter 14500 , loss 0.05085587 , lr 5.2582792750472464e-05
+iter 14750 , loss 0.110566504 , lr 4.817988817005873e-05
+iter 15000 , loss 0.08763986 , lr 4.3933982822017876e-05
+iter 15250 , loss 0.069227785 , lr 3.9851623584647144e-05
+iter 15500 , loss 0.077555835 , lr 3.593910515999536e-05
+iter 15750 , loss 0.07135036 , lr 3.220246036788829e-05
+iter 16000 , loss 0.07454802 , lr 2.8647450843757897e-05
+iter 16250 , loss 0.07831363 , lr 2.5279558154618197e-05
+iter 16500 , loss 0.07476685 , lr 2.210397534688617e-05
+iter 16750 , loss 0.07381383 , lr 1.912559893908042e-05
+iter 17000 , loss 0.07252731 , lr 1.634902137174483e-05
+iter 17250 , loss 0.06407097 , lr 1.3778523926237827e-05
+iter 17500 , loss 0.06775133 , lr 1.1418070123306989e-05
+iter 17750 , loss 0.07830028 , lr 9.271299611627391e-06
+iter 18000 , loss 0.073560044 , lr 7.34152255572697e-06
+iter 18250 , loss 0.07134527 , lr 5.631714531952908e-06
+iter 18500 , loss 0.076993674 , lr 4.144511940348516e-06
+iter 18750 , loss 0.08834009 , lr 2.882207939515435e-06
+iter 19000 , loss 0.07242885 , lr 1.8467489107293509e-06
+iter 19250 , loss 0.07765603 , lr 1.0397314567610559e-06
+iter 19500 , loss 0.06540564 , lr 4.623999400308054e-07
+iter 19750 , loss 0.07931295 , lr 1.1564456389156485e-07
+iter 20000 , loss 0.083000645 , lr 0.0
                                   
 ================================= 
 Global information about the job: 
@@ -19,9 +113,9 @@ Global information about the job:
   
 Job owner: saumi(54773)
 Job name:  isa-alpha3
-Node list: ravg1015
-Job start: Mon Oct 23 17:37:31 CEST 2023
-Job end:   Mon Oct 23 17:37:35 CEST 2023
+Node list: ravg1034
+Job start: Tue Oct 24 17:16:25 CEST 2023
+Job end:   Tue Oct 24 19:12:36 CEST 2023
 Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
 Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha3.sh
   
@@ -34,8 +128,8 @@ tasks of the per-task memory high-water marks; cf. "man sacct"):
   
 JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
 ------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
-7623656       isa-alpha3      1             8                             00:00:04    127:0
+7630760       isa-alpha3      1             8                             01:56:11      0:0
   
-Maximum memory per node: 0.001375 GB (defined as MaxRSS*Ntasks/NNodes)
-CPU utilization: 0.0 %
+Maximum memory per node: 2.635737 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 116.1 %
   

@@ -1,7 +1,29 @@
-Traceback (most recent call last):
-  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train.py", line 11, in <module>
-    import torch
-ModuleNotFoundError: No module named 'torch'
+
+CondaValueError: prefix already exists: /u/saumi/conda-envs/gpu_env
+
+
+CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+To initialize your shell, run
+
+    $ conda init <SHELL_NAME>
+
+Currently supported shells are:
+  - bash
+  - fish
+  - tcsh
+  - xonsh
+  - zsh
+  - powershell
+
+See 'conda init --help' for more information and options.
+
+IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+
+
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+/raven/u/saumi/multi-object-detection/Slot-Attention/code/data.py:94: RuntimeWarning: invalid value encountered in true_divide
+  eventMasks = np.where(eventHistograms>0,eventMasks/eventHistograms,eventMasks)
+slurmstepd: error: *** JOB 7629037 ON ravg1037 CANCELLED AT 2023-10-24T13:39:45 ***
                                   
 ================================= 
 Global information about the job: 
@@ -9,9 +31,9 @@ Global information about the job:
   
 Job owner: saumi(54773)
 Job name:  isa-alpha1
-Node list: ravg1203
-Job start: Mon Oct 23 15:21:10 CEST 2023
-Job end:   Mon Oct 23 15:21:14 CEST 2023
+Node list: ravg1037
+Job start: Tue Oct 24 13:32:41 CEST 2023
+Job end:   Tue Oct 24 13:39:45 CEST 2023
 Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
 Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha1.sh
   
@@ -24,8 +46,8 @@ tasks of the per-task memory high-water marks; cf. "man sacct"):
   
 JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
 ------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
-7623025       isa-alpha1      1             8                             00:00:04      1:0
+7629037       isa-alpha1      1             8                             00:07:04      0:0
   
-Maximum memory per node: 0.001345 GB (defined as MaxRSS*Ntasks/NNodes)
+Maximum memory per node: 2.402520 GB (defined as MaxRSS*Ntasks/NNodes)
 CPU utilization: 0.0 %
   

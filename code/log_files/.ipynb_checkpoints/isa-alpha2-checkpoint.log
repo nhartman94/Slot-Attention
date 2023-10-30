@@ -1,0 +1,25 @@
+
+CondaValueError: prefix already exists: /u/saumi/conda-envs/gpu_env
+
+
+CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+To initialize your shell, run
+
+    $ conda init <SHELL_NAME>
+
+Currently supported shells are:
+  - bash
+  - fish
+  - tcsh
+  - xonsh
+  - zsh
+  - powershell
+
+See 'conda init --help' for more information and options.
+
+IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+
+
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+/raven/u/saumi/multi-object-detection/Slot-Attention/code/data.py:94: RuntimeWarning: invalid value encountered in true_divide
+  eventMasks = np.where(eventHistograms>0,eventMasks/eventHistograms,eventMasks)

@@ -9,5 +9,11 @@
 #SBATCH --output log_files/isa-alpha2.log
 #SBATCH --error log_files/isa-alpha2.log
 module purge
-module load anaconda/3/2021.11 # <-> python 3.9.module load cuda/11.6module load cudnn/8.8module load pytorch/gpu-cuda-11.6/2.0.0conda env create -f gpu_env.yamlconda activate gpu_envpwd
+module load anaconda/3/2021.11 # <-> python 3.9.
+module load cuda/11.6
+module load cudnn/8.8
+module load pytorch/gpu-cuda-11.6/2.0.0
+conda env create -f gpu_env.yaml
+conda activate gpu_env
+pwd
 python train.py --config configs/isa-alpha2.yaml --warm_start --warm_start_config configs/isa-cosine-decay.yaml --device cuda:0 
