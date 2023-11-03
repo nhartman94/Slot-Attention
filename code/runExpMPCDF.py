@@ -58,7 +58,7 @@ if not os.path.exists(SLURM_DIR):
 
 # NH: 22.10.23
 # ISA model with L_tot = L_bce + alpha + L_mse
-for alpha in [3]:
+for alpha in [0.5, 1, 1.5, 2, 2.5, 3.5, 4, 4.5, 5, 7, 10]:
 
     cID = f'isa-alpha{alpha}'
     cmd = f"python train.py --config configs/{cID}.yaml --warm_start"
