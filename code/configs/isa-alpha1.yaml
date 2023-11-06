@@ -8,6 +8,6 @@ hps:
   pixel_mult: 0.2 
 opt:
   lr: 3.e-4
-  Ntrain: 40_000
+  Ntrain: 20_000
   bs: 256
   alpha: 1
