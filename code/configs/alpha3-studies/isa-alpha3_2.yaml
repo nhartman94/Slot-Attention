@@ -1,0 +1,13 @@
+data:
+  N_clusters: 2
+  isRing: true
+hps:
+  hidden_dim: 16
+  k_slots: 3
+  query_dim: 128
+  pixel_mult: 0.2 
+opt:
+  lr: 3.e-4
+  Ntrain: 20_000
+  bs: 256
+  alpha: 3

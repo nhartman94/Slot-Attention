@@ -1,3 +1,4 @@
+
 '''
 Script for training the slot attention models.
 Starting from models and functions in Lukas's notebook.
@@ -372,7 +373,7 @@ if __name__ == "__main__":
     train(model, 
           **opt,
           losses=losses,
-          kwargs=kwargs,
+          N_obj=kwargs,
           device=device,
           plot_every=plot_every, 
           save_every=save_every,

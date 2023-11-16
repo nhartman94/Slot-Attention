@@ -1,0 +1,54 @@
+
+CondaValueError: prefix already exists: /u/saumi/conda-envs/gpu_env
+
+
+CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+To initialize your shell, run
+
+    $ conda init <SHELL_NAME>
+
+Currently supported shells are:
+  - bash
+  - fish
+  - tcsh
+  - xonsh
+  - zsh
+  - powershell
+
+See 'conda init --help' for more information and options.
+
+IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+
+
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+Traceback (most recent call last):
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train.py", line 320, in <module>
+    os.mkdir(newDir)
+FileNotFoundError: [Errno 2] No such file or directory: 'models//alpha-studies/isa-alpha3_0'
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-alpha3_0
+Node list: ravg1008
+Job start: Mon Nov 13 15:33:33 CET 2023
+Job end:   Mon Nov 13 15:33:55 CET 2023
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha3_0.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+7831068       isa-alpha3      1             8                             00:00:22      1:0
+  
+Maximum memory per node: 0.001425 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 0.0 %
+  

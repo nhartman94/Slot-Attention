@@ -1,0 +1,243 @@
+
+CondaValueError: prefix already exists: /u/saumi/conda-envs/gpu_env
+
+
+CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+To initialize your shell, run
+
+    $ conda init <SHELL_NAME>
+
+Currently supported shells are:
+  - bash
+  - fish
+  - tcsh
+  - xonsh
+  - zsh
+  - powershell
+
+See 'conda init --help' for more information and options.
+
+IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+
+
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+/raven/u/saumi/multi-object-detection/Slot-Attention/code/data.py:94: RuntimeWarning: invalid value encountered in true_divide
+  eventMasks = np.where(eventHistograms>0,eventMasks/eventHistograms,eventMasks)
+Starting from an earlier training from configs/isa-cosine-decay.yaml
+iter 250 , loss 0.23735107 , lr 1.4994217771805423e-05
+iter 500 , loss 0.18335137 , lr 2.9953760005996917e-05
+iter 750 , loss 0.14370292 , lr 4.484404028148584e-05
+iter 1000 , loss 0.13245586 , lr 5.963065021785413e-05
+iter 1250 , loss 0.1276788 , lr 7.427944801512113e-05
+iter 1500 , loss 0.09433207 , lr 8.875664641789544e-05
+iter 1750 , loss 0.09888059 , lr 0.00010302889991381646
+iter 2000 , loss 0.081171125 , lr 0.00011706339097770922
+iter 2250 , loss 0.06856725 , lr 0.00013082791517476767
+iter 2500 , loss 0.06404249 , lr 0.0001442909649383465
+iter 2750 , loss 0.06755135 , lr 0.00015742181184056923
+iter 3000 , loss 0.05594501 , lr 0.00017019058717695308
+iter 3250 , loss 0.044310167 , lr 0.00018256836068959774
+iter 3500 , loss 0.052807882 , lr 0.00019452721725717964
+iter 3750 , loss 0.042776093 , lr 0.00020604033138403634
+iter 4000 , loss 0.044709712 , lr 0.0002170820393249937
+iter 4250 , loss 0.046927795 , lr 0.00022762790868729492
+iter 4500 , loss 0.041296832 , lr 0.0002376548053560042
+iter 4750 , loss 0.03628572 , lr 0.00024714095759458514
+iter 5000 , loss 0.040189255 , lr 0.00025606601717798207
+iter 5250 , loss 0.051472083 , lr 0.0002518201118299413
+iter 5500 , loss 0.057442248 , lr 0.00024741720724952754
+iter 5750 , loss 0.038363926 , lr 0.00024286409239647507
+iter 6000 , loss 0.041666355 , lr 0.00023816778784387094
+iter 6250 , loss 0.049593523 , lr 0.00023333553495294033
+iter 6500 , loss 0.053329118 , lr 0.0002283747847073923
+iter 6750 , loss 0.035872273 , lr 0.00022329318622454325
+iter 7000 , loss 0.052497707 , lr 0.00021809857496093199
+iter 7250 , loss 0.041880272 , lr 0.0002127989606306142
+iter 7500 , loss 0.042000845 , lr 0.00020740251485476345
+iter 7750 , loss 0.030445004 , lr 0.00020191755856162393
+iter 8000 , loss 0.037790827 , lr 0.0001963525491562421
+iter 8250 , loss 0.03330206 , lr 0.00019071606747976113
+iter 8500 , loss 0.033471745 , lr 0.0001850168045783858
+iter 8750 , loss 0.03621929 , lr 0.00017926354830241924
+iter 9000 , loss 0.037034396 , lr 0.00017346516975603462
+iter 9250 , loss 0.046586186 , lr 0.00016763060961867566
+iter 9500 , loss 0.041415848 , lr 0.00016176886435917675
+iter 9750 , loss 0.054558672 , lr 0.0001558889723638603
+iter 10000 , loss 0.033977278 , lr 0.00015
+iter 10250 , loss 0.04312761 , lr 0.0001441110276361397
+iter 10500 , loss 0.043488182 , lr 0.00013823113564082325
+iter 10750 , loss 0.032750875 , lr 0.0001323693903813244
+iter 11000 , loss 0.04403186 , lr 0.0001265348302439654
+iter 11250 , loss 0.037645996 , lr 0.00012073645169758072
+iter 11500 , loss 0.038487423 , lr 0.0001149831954216142
+iter 11750 , loss 0.029244777 , lr 0.00010928393252023886
+iter 12000 , loss 0.025991479 , lr 0.0001036474508437579
+iter 12250 , loss 0.030060757 , lr 9.808244143837605e-05
+iter 12500 , loss 0.040983386 , lr 9.259748514523656e-05
+iter 12750 , loss 0.02783943 , lr 8.720103936938576e-05
+iter 13000 , loss 0.03291787 , lr 8.190142503906798e-05
+iter 13250 , loss 0.03875004 , lr 7.670681377545674e-05
+iter 13500 , loss 0.030901337 , lr 7.162521529260767e-05
+iter 13750 , loss 0.048004646 , lr 6.66644650470597e-05
+iter 14000 , loss 0.0312105 , lr 6.183221215612904e-05
+iter 14250 , loss 0.034133345 , lr 5.7135907603524936e-05
+iter 14500 , loss 0.027949575 , lr 5.2582792750472464e-05
+iter 14750 , loss 0.031708073 , lr 4.817988817005873e-05
+iter 15000 , loss 0.029856494 , lr 4.3933982822017876e-05
+iter 15250 , loss 0.02750687 , lr 3.9851623584647144e-05
+iter 15500 , loss 0.030694583 , lr 3.593910515999536e-05
+iter 15750 , loss 0.029815704 , lr 3.220246036788829e-05
+iter 16000 , loss 0.031441875 , lr 2.8647450843757897e-05
+iter 16250 , loss 0.025030907 , lr 2.5279558154618197e-05
+iter 16500 , loss 0.02936913 , lr 2.210397534688617e-05
+iter 16750 , loss 0.030975828 , lr 1.912559893908042e-05
+iter 17000 , loss 0.027882826 , lr 1.634902137174483e-05
+iter 17250 , loss 0.03310505 , lr 1.3778523926237827e-05
+iter 17500 , loss 0.033516582 , lr 1.1418070123306989e-05
+iter 17750 , loss 0.035935067 , lr 9.271299611627391e-06
+iter 18000 , loss 0.02869369 , lr 7.34152255572697e-06
+iter 18250 , loss 0.030635126 , lr 5.631714531952908e-06
+iter 18500 , loss 0.02864759 , lr 4.144511940348516e-06
+iter 18750 , loss 0.02989463 , lr 2.882207939515435e-06
+iter 19000 , loss 0.02695534 , lr 1.8467489107293509e-06
+iter 19250 , loss 0.033171058 , lr 1.0397314567610559e-06
+iter 19500 , loss 0.03347977 , lr 4.623999400308054e-07
+iter 19750 , loss 0.03539288 , lr 1.1564456389156485e-07
+iter 20000 , loss 0.03728243 , lr 0.0
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-alpha3_0
+Node list: ravg1070
+Job start: Mon Nov 13 17:28:47 CET 2023
+Job end:   Mon Nov 13 19:23:18 CET 2023
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha3_0.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+7832345       isa-alpha3      1             8                             01:54:31      0:0
+  
+Maximum memory per node: 2.704195 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 121.4 %
+  
+models//isa-alpha3_0 already exists
+figures//isa-alpha3_0 already exists
+Starting from an earlier training from configs/isa-cosine-decay.yaml
+iter 250 , loss 0.2376546 , lr 1.4994217771805423e-05
+iter 500 , loss 0.16177076 , lr 2.9953760005996917e-05
+iter 750 , loss 0.1641217 , lr 4.484404028148584e-05
+iter 1000 , loss 0.1219258 , lr 5.963065021785413e-05
+iter 1250 , loss 0.10269005 , lr 7.427944801512113e-05
+iter 1500 , loss 0.10477284 , lr 8.875664641789544e-05
+iter 1750 , loss 0.08510876 , lr 0.00010302889991381646
+iter 2000 , loss 0.09437686 , lr 0.00011706339097770922
+iter 2250 , loss 0.06620844 , lr 0.00013082791517476767
+iter 2500 , loss 0.070879005 , lr 0.0001442909649383465
+iter 2750 , loss 0.06726904 , lr 0.00015742181184056923
+iter 3000 , loss 0.055832855 , lr 0.00017019058717695308
+iter 3250 , loss 0.05667714 , lr 0.00018256836068959774
+iter 3500 , loss 0.051004454 , lr 0.00019452721725717964
+iter 3750 , loss 0.05612075 , lr 0.00020604033138403634
+iter 4000 , loss 0.053591117 , lr 0.0002170820393249937
+iter 4250 , loss 0.053045448 , lr 0.00022762790868729492
+iter 4500 , loss 0.04824087 , lr 0.0002376548053560042
+iter 4750 , loss 0.044636443 , lr 0.00024714095759458514
+iter 5000 , loss 0.042510875 , lr 0.00025606601717798207
+iter 5250 , loss 0.045283772 , lr 0.0002518201118299413
+iter 5500 , loss 0.044089 , lr 0.00024741720724952754
+iter 5750 , loss 0.0459388 , lr 0.00024286409239647507
+iter 6000 , loss 0.030132169 , lr 0.00023816778784387094
+iter 6250 , loss 0.039574396 , lr 0.00023333553495294033
+iter 6500 , loss 0.03601397 , lr 0.0002283747847073923
+iter 6750 , loss 0.039921276 , lr 0.00022329318622454325
+iter 7000 , loss 0.032764267 , lr 0.00021809857496093199
+iter 7250 , loss 0.038497664 , lr 0.0002127989606306142
+iter 7500 , loss 0.0524901 , lr 0.00020740251485476345
+iter 7750 , loss 0.0405851 , lr 0.00020191755856162393
+iter 8000 , loss 0.029779507 , lr 0.0001963525491562421
+iter 8250 , loss 0.048888776 , lr 0.00019071606747976113
+iter 8500 , loss 0.040605675 , lr 0.0001850168045783858
+iter 8750 , loss 0.052063167 , lr 0.00017926354830241924
+iter 9000 , loss 0.053659253 , lr 0.00017346516975603462
+iter 9250 , loss 0.07186179 , lr 0.00016763060961867566
+iter 9500 , loss 0.052311473 , lr 0.00016176886435917675
+iter 9750 , loss 0.037881874 , lr 0.0001558889723638603
+iter 10000 , loss 0.039617237 , lr 0.00015
+iter 10250 , loss 0.032086797 , lr 0.0001441110276361397
+iter 10500 , loss 0.042020366 , lr 0.00013823113564082325
+iter 10750 , loss 0.045579374 , lr 0.0001323693903813244
+iter 11000 , loss 0.03500059 , lr 0.0001265348302439654
+iter 11250 , loss 0.045710765 , lr 0.00012073645169758072
+iter 11500 , loss 0.047857903 , lr 0.0001149831954216142
+iter 11750 , loss 0.037393123 , lr 0.00010928393252023886
+iter 12000 , loss 0.034040064 , lr 0.0001036474508437579
+iter 12250 , loss 0.030712564 , lr 9.808244143837605e-05
+iter 12500 , loss 0.028941568 , lr 9.259748514523656e-05
+iter 12750 , loss 0.032830402 , lr 8.720103936938576e-05
+iter 13000 , loss 0.031620346 , lr 8.190142503906798e-05
+iter 13250 , loss 0.037926193 , lr 7.670681377545674e-05
+iter 13500 , loss 0.03376687 , lr 7.162521529260767e-05
+iter 13750 , loss 0.032795276 , lr 6.66644650470597e-05
+iter 14000 , loss 0.0419149 , lr 6.183221215612904e-05
+iter 14250 , loss 0.027576992 , lr 5.7135907603524936e-05
+iter 14500 , loss 0.034040026 , lr 5.2582792750472464e-05
+iter 14750 , loss 0.033390447 , lr 4.817988817005873e-05
+iter 15000 , loss 0.029566016 , lr 4.3933982822017876e-05
+iter 15250 , loss 0.03447027 , lr 3.9851623584647144e-05
+iter 15500 , loss 0.028379563 , lr 3.593910515999536e-05
+iter 15750 , loss 0.039667357 , lr 3.220246036788829e-05
+iter 16000 , loss 0.02562811 , lr 2.8647450843757897e-05
+iter 16250 , loss 0.029268986 , lr 2.5279558154618197e-05
+iter 16500 , loss 0.04649315 , lr 2.210397534688617e-05
+iter 16750 , loss 0.029146835 , lr 1.912559893908042e-05
+iter 17000 , loss 0.0377606 , lr 1.634902137174483e-05
+iter 17250 , loss 0.03247695 , lr 1.3778523926237827e-05
+iter 17500 , loss 0.029591931 , lr 1.1418070123306989e-05
+iter 17750 , loss 0.03448439 , lr 9.271299611627391e-06
+iter 18000 , loss 0.03054309 , lr 7.34152255572697e-06
+iter 18250 , loss 0.030475348 , lr 5.631714531952908e-06
+iter 18500 , loss 0.035184138 , lr 4.144511940348516e-06
+iter 18750 , loss 0.032876503 , lr 2.882207939515435e-06
+iter 19000 , loss 0.02626439 , lr 1.8467489107293509e-06
+iter 19250 , loss 0.030659003 , lr 1.0397314567610559e-06
+iter 19500 , loss 0.026166622 , lr 4.623999400308054e-07
+iter 19750 , loss 0.030437423 , lr 1.1564456389156485e-07
+iter 20000 , loss 0.030862577 , lr 0.0
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-alpha3_0
+Node list: ravg1083
+Job start: Mon Nov 13 17:33:12 CET 2023
+Job end:   Mon Nov 13 19:27:22 CET 2023
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-alpha3_0.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+7832395       isa-alpha3      1             8                             01:54:10      0:0
+  
+Maximum memory per node: 3.486239 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 122.0 %
+  
