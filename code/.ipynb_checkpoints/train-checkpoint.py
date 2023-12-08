@@ -1,3 +1,4 @@
+
 '''
 Script for training the slot attention models.
 Starting from models and functions in Lukas's notebook.
@@ -13,9 +14,9 @@ import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
 # custom code for this repo
-from model import SlotAttentionPosEmbed
+from model import InvariantSlotAttention, SlotAttentionPosEmbed
 from data import make_batch
-from plotting import plot_kslots, plot_kslots_iters, plot_kslots_grads
+from plotting import plot_chosen_slots, plot_kslots, plot_kslots_iters, plot_kslots_grads
 
 # file IO packages
 import os
@@ -76,31 +77,54 @@ def cosineSchedule(base_learning_rate, T, warmup_steps):
 
     return lr
 
-def img_entropy(mask):
+
+def comb_loss(att,flat_mask,Y=None,Y_pred=None,alpha=1):
+    '''
+    Goal: Given a NN that predicts both an occupancy mask
+    and a center and radius for each slot, combine these terms 
+    into a combined loss function:
     
-    entropy = mask * torch.log(torch.where(mask==0, 1., mask.double()))
-    entropy = - entropy.sum(dim=1).mean(dim=[1,2]) # sum over slots, mean over pixels
-
-    return entropy.float()
-
+    L = L_bce + alpha * L_mse
+    
+    Note: This function should be general enough to either calculate
+    the losses of all the combinations of slots and targets or just
+    the single loss between the loss and the chosen target
+        
+    '''
+    
+    max_n_rings = flat_mask.shape[1]
+    k_slots = att.shape[1]
+    
+    att_ext  = torch.tile(att.unsqueeze(2), dims=(1,1,max_n_rings,1)) 
+    mask_ext = torch.tile(flat_mask.unsqueeze(1),dims=(1,k_slots,1,1)) 
+    
+    l_bce = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
+    
+    if alpha == 0:
+        return l_bce
+    
+    else:
+    
+        # Calc MSEmse_loss(Y,Y_pred)
+        l_mse = torch.nn.MSELoss(reduction='none')(Y_pred.unsqueeze(2), Y.unsqueeze(1)).mean(axis=-1)
+        return l_bce + alpha * l_mse
+    
 
 def train(model, 
           Ntrain = 5000, 
           bs=32, 
           lr=3e-4,
-          weightDecaySchedule='cosine',
           warmup_steps=5_000,
-          decay_rate = 0.5,
-          decay_steps = 50_000,
-        #   loss_def='kl_div',
-          losses = [],
-          clip_val=1,
+          alpha=1,
+          losses = {'tot':[],'bce':[],'mse':[]},
           kwargs={'isRing': True, 'N_clusters':2},
+          clip_val = 1,
           device='cpu',
           plot_every=250, 
           save_every=1000,
           color='C0',cmap='Blues',
-          modelDir='.',figDir='',showImg=True):
+          modelDir='.',figDir='',
+          discovery_mode=False):
     '''
     train
     (Function from Lukas)
@@ -111,115 +135,110 @@ def train(model,
     - bs: batch size to use for the sampling
     - lr: The base learning rate for training with adam
         (although this learning rate gets modified w/ the subsequent optimizer schedules)
-    - weightDecaySchedule: cosine or exponential
     - warmup_steps: steps over which you gradually ramp up the learning rate
         If 0 is passed, the warm-up will never be activated
-    - decay_rate: factor for an exponential decay schedule:
-           lr * decay_rate^(step / decay_steps)
-         If the decay rate is set to 1, no dec
-    - decay_steps: Controls the timescale of the learning rate decay (see above)
-    - losses: If starting from a warm-start, a list of the previous losses to append to
+    - alpha (default 1): The weight to add to the MSE slot (x,y,r) predictor function
+        loss = l_bce + alpha * mse
+    - losses: Dict for the `tot`, `bce`, and `mse` loss (terms)
+        If starting from a warm-start, a list of the previous losses to append to
     - kwargs: dictionary of key word arguments to pass to the `make_batch` function
-    - clip_val: Value to use for "gradient clipping" (default 5)
-    - device: (default cpu) for data loading... needs to be the same as model
+    - clip_val: Value to use for "gradient clipping" (default 1)
+    - device: (default cpu) for data loading, needs to be the same as model
+    - plot_every (default 250), save_every (default 1000): How often to plot / save the model
     - color,cmap: options that get passed the diagonistic plotting scripts
     - modelDir: Directory to save the models to as
         {modelDir}/m_{iter}.pt
-    - figDir: Directory to save the figures to
+    - figDir: Directory to save the figures to 
     '''
 
-    
-    loss_fct = torch.nn.BCELoss(reduction='none')
-    # assert (loss_def == 'kl_div') or (loss_def == 'BCE')
-    # if loss_def == 'kl_div':
-    #     loss_fct = torch.nn.KLDivLoss(reduction='none')
-    # elif loss_def == 'BCE':
-    #     loss_fct = 
-    # else:
-    #     print('Error, loss_def must be kl_div or BCE,',loss_def,'not supported')
-    #     raise NotImplementedError
-
     # Learning rate schedule config
-    if weightDecaySchedule == 'cosine':   
-        lrs = cosineSchedule(lr, Ntrain, warmup_steps)
-    elif weightDecaySchedule == 'exp':
-        lrs = expDecaySchedule(lr, Ntrain,warmup_steps,decay_rate,decay_steps)
-    else:
-        print('Error, weightDecaySchedule must be cosine or exp,',weightDecaySchedule,'not supported')
-        raise NotImplementedError
+    base_learning_rate = lr
     
-    opt = torch.optim.Adam(model.parameters())
+    opt = torch.optim.Adam(model.parameters(), base_learning_rate)
     model.train()
     
     k_slots = model.k_slots
+    max_n_rings = kwargs['N_clusters']
     resolution = model.resolution
     kwargs['device'] = device
 
-    max_n_rings = kwargs['N_clusters']
-    isRing = kwargs["isRing"]
-    print(f'Training model with {k_slots} slots on {max_n_rings}'+ ("rings" if isRing else "blobs"))
+    start = len(losses)
+    for i in range(start,start+Ntrain):
 
-    for i, lr_i in enumerate(lrs):
-
-        opt.param_groups[0]['lr'] = lr_i
+        learning_rate = base_learning_rate * 0.5 * (1 + np.cos(np.pi * i / Ntrain))
+        if i < warmup_steps:
+            learning_rate *= (i / warmup_steps)
+        
+        opt.param_groups[0]['lr'] = learning_rate
         
         X, Y, mask = make_batch(N_events=bs, **kwargs)
+        #print(X.shape)
+        #print(Y.shape)
+        #print(mask.shape)
         
-        queries, att, wts = model(X)
-
-        with torch.no_grad():
-
-            # Calculate the loss of _all_ possible combinations  
-            flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))[:,None,:,:]
+        queries, att, Y_pred = model(X)
         
-            att_ext  = torch.tile(att.unsqueeze(2),  dims=(1,1,max_n_rings,1)) 
-            mask_ext = torch.tile(flat_mask,dims=(1,k_slots,1,1)) 
+        li = 0
+        if discovery_mode==True:
+            # compare sum of attentions to actual picture!
+            li = torch.nn.functional.mse_loss(X, np.sum(att, axis=1))
+        else:
+         
+            # Reshape the target mask to be flat in the pixels (same shape as att)
+            flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))      
+            with torch.no_grad():
 
-            pairwise_cost = loss_fct(att_ext,mask_ext).mean(axis=-1)
+                att_ext  = torch.tile(att.unsqueeze(2), dims=(1,1,max_n_rings,1)) 
+                mask_ext = torch.tile(flat_mask.unsqueeze(1),dims=(1,k_slots,1,1)) 
 
-            indices = hungarian_matching(pairwise_cost)
+                pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
 
-        # Apply the sorting to the predict
-        bis=torch.arange(bs).to(device)
-        indices=indices.to(device)
+                # pairwise_cost = comb_loss(att,flat_mask,Y,Y_pred,alpha)
+                indices = hungarian_matching(pairwise_cost)
 
-        slots_sorted = torch.cat([att[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            # Apply the sorting to the predict
+            bis=torch.arange(bs).to(device)
+            indices=indices.to(device)
+
+            # Loss calc
+            slots_sorted = torch.cat([att[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            l_bce = F.binary_cross_entropy(slots_sorted,rings_sorted,reduction='none').sum(axis=1).mean()
+
+            Y_pred_sorted = torch.cat([Y_pred[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            Y_true_sorted = torch.cat([Y[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+
+            l_mse = torch.nn.MSELoss(reduction='none')(Y_pred_sorted,Y_true_sorted).sum(axis=1).mean()
+
+            # Calculate the loss
+            li = l_bce + alpha*l_mse
         
-        flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))
-        rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-
-        # Calculate the loss
-        loss = loss_fct(slots_sorted,rings_sorted).sum(axis=1).mean(axis=1)
-        loss -= img_entropy(mask)
-        loss = loss.mean()
-
-        loss.backward()
+        li.backward()
+        clip_val=1
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_val)
-   
+        
         opt.step()
         opt.zero_grad()
-
-        losses.append(float(loss))
+        
+        if discovery_mode==True:
+            losses['mse'].append(float(li))
+        else:
+            losses['tot'].append(float(li))
+            losses['bce'].append(float(l_bce))
+            losses['mse'].append(float(l_mse))
         
         if i % plot_every == 0:
-            print('iter',i,', loss',loss.detach().cpu().numpy(),', lr',lr_i)
-            
+            print('iter',i,', loss',li.detach().cpu().numpy(),', lr',opt.param_groups[0]['lr'])  
             iEvt = 0
-            att_img = att[iEvt].reshape(model.k_slots,*resolution)
 
-            plot_kslots(losses, 
-                        mask[iEvt].sum(axis=0).detach().cpu().numpy(), 
-                        att_img.detach().cpu().numpy(),
-                        k_slots, color=color,cmap=cmap,
-                        figname=f'{figDir}/loss-slots-iter{i}-evt{iEvt}.jpg' if figDir else '',
-                        showImg=showImg)
+            # losses, mask, att_img, Y_true, Y_pred
+            plot_chosen_slots(losses,
+                              mask[iEvt].sum(axis=0), 
+                              slots_sorted[iEvt].reshape(max_n_rings,*resolution),
+                              Y_true_sorted[iEvt],
+                              Y_pred_sorted[iEvt],
+                              figname=f'{figDir}/loss_chosen_slots.jpg')
             
-            
-            # plot_kslots_iters(model, X, iEvt=0, color=color,cmap=cmap, 
-            #                   figname=f'{figDir}/slots-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
-            # plot_kslots_grads(model,model.gradients,iEvt=0, color=color,cmap=cmap,
-            #                   figname=f'{figDir}/grad-unroll-iter{i}-evt{iEvt}.jpg',showImg=showImg)
-
         if (i % save_every == 0) and modelDir:
             torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')
             with open(f'{modelDir}/loss.json','w') as f:
@@ -318,7 +337,8 @@ if __name__ == "__main__":
 
     # Define the architecture 
     hps['device'] = device # the model also needs to 
-    model = SlotAttentionPosEmbed(**hps).to(device)
+
+    model = InvariantSlotAttention(**hps).to(device)
 
     # Load in the weights 
     if warm_start:
@@ -348,7 +368,7 @@ if __name__ == "__main__":
         # Load in the weights
         # https://pytorch.org/tutorials/beginner/saving_loading_models.html
         # for the "save on gpu, load on gpu" cmd
-        model.load_state_dict(torch.load(modelToLoad))
+        model.load_state_dict(torch.load(modelToLoad,map_location=device),strict=False)
         model.to(device)
         
         # Also load in the losses if we're starting from the same config file
@@ -356,11 +376,11 @@ if __name__ == "__main__":
             with open(f'models/{prevID}/loss.json') as f:
                 losses = json.load(f)
         else: 
-            losses = []
+            losses = {'tot':[],'bce':[],'mse':[]}
 
     else: 
         print('Training starting from freshly initialized weights')
-        losses = []
+        losses = {'tot':[],'bce':[],'mse':[]}
 
     # Train the model 
     train(model, 

@@ -9,8 +9,9 @@ Nov 2023
 
 import scclevr
 import torch
+import numpy as np
 
-def makeRings(N_img=1000, N_obj=2):
+def makeRings(N_img=1000, N_obj=2, device='cpu'):
     '''
     What to adjust from the repo:
     - reshape arrays
@@ -28,6 +29,7 @@ def makeRings(N_img=1000, N_obj=2):
     - object_features: (N_img, N_obj, 3), 3 for x,y, radius
     '''
     
+    
     rings = scclevr.RingsBinaryUniform(N_obj) # two rings per imagne
     event_images, object_images, n_objects, object_features =  rings.gen_events(N_img)
     
@@ -36,7 +38,7 @@ def makeRings(N_img=1000, N_obj=2):
     # change dimentions to be using in SlotAttention modules
     object_images, event_images = _change_dims(event_images, object_images)
     # convert to Pytorch Tensors
-    return _convert_into_pytorch_tensors(event_images, object_images, n_objects, object_features)
+    return _convert_into_pytorch_tensors(event_images, object_images, n_objects, object_features, device)
     
 
 def _att_masks(event_images, object_images, n_objects):
@@ -67,7 +69,7 @@ def _change_dims(event_images, object_images):
     return object_images, event_images    
     
     
-def _convert_into_pytorch_tensors(event_images, object_images, n_objects, object_features, device='cpu'):
+def _convert_into_pytorch_tensors(event_images, object_images, n_objects, object_features, device):
     return torch.FloatTensor(event_images).to(device), \
                torch.FloatTensor(object_images).to(device), \
                torch.FloatTensor(n_objects).to(device), \

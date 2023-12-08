@@ -43,8 +43,9 @@ def writeSlurmFile(pythonCmd, job_name, useGPU=True):
     f.write("module load cudnn/8.8\n")
     f.write("module load pytorch/gpu-cuda-11.6/2.0.0\n")
     
-    f.write("conda env create -f gpu_env.yaml\n")
+    #f.write("conda env create -f gpu_env.yaml\n")
     f.write("conda activate gpu_env\n")
+    #f.write("conda env update -f gpu_env.yaml\n")
     
     f.write("pwd\n")
     

@@ -171,7 +171,10 @@ def train(model,
         
         opt.param_groups[0]['lr'] = learning_rate
         
-        X, Y, mask, _ = makeRings(N_img=bs, N_obj=N_obj)
+        X, mask, _, Y = makeRings(N_img=bs, N_obj=N_obj, device=device)
+        #print(X.shape)
+        #print(Y.shape)
+        #print(mask.shape)
         
         queries, att, Y_pred = model(X)
          

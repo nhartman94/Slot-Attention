@@ -123,7 +123,8 @@ def train(model,
           plot_every=250, 
           save_every=1000,
           color='C0',cmap='Blues',
-          modelDir='.',figDir=''):
+          modelDir='.',figDir='',
+          discovery_mode=False):
     '''
     train
     (Function from Lukas)
@@ -171,37 +172,46 @@ def train(model,
         opt.param_groups[0]['lr'] = learning_rate
         
         X, Y, mask = make_batch(N_events=bs, **kwargs)
+        #print(X.shape)
+        #print(Y.shape)
+        #print(mask.shape)
         
         queries, att, Y_pred = model(X)
-         
-        # Reshape the target mask to be flat in the pixels (same shape as att)
-        flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))      
-        with torch.no_grad():
-            
-            att_ext  = torch.tile(att.unsqueeze(2), dims=(1,1,max_n_rings,1)) 
-            mask_ext = torch.tile(flat_mask.unsqueeze(1),dims=(1,k_slots,1,1)) 
-            
-            pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
-            
-            # pairwise_cost = comb_loss(att,flat_mask,Y,Y_pred,alpha)
-            indices = hungarian_matching(pairwise_cost)
-
-        # Apply the sorting to the predict
-        bis=torch.arange(bs).to(device)
-        indices=indices.to(device)
-
-        # Loss calc
-        slots_sorted = torch.cat([att[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-        rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-        l_bce = F.binary_cross_entropy(slots_sorted,rings_sorted,reduction='none').sum(axis=1).mean()
         
-        Y_pred_sorted = torch.cat([Y_pred[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-        Y_true_sorted = torch.cat([Y[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+        li = 0
+        if discovery_mode==True:
+            # compare sum of attentions to actual picture!
+            li = torch.nn.functional.mse_loss(X, np.sum(att, axis=1))
+        else:
+         
+            # Reshape the target mask to be flat in the pixels (same shape as att)
+            flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))      
+            with torch.no_grad():
 
-        l_mse = torch.nn.MSELoss(reduction='none')(Y_pred_sorted,Y_true_sorted).sum(axis=1).mean()
-    
-        # Calculate the loss
-        li = l_bce + alpha*l_mse
+                att_ext  = torch.tile(att.unsqueeze(2), dims=(1,1,max_n_rings,1)) 
+                mask_ext = torch.tile(flat_mask.unsqueeze(1),dims=(1,k_slots,1,1)) 
+
+                pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
+
+                # pairwise_cost = comb_loss(att,flat_mask,Y,Y_pred,alpha)
+                indices = hungarian_matching(pairwise_cost)
+
+            # Apply the sorting to the predict
+            bis=torch.arange(bs).to(device)
+            indices=indices.to(device)
+
+            # Loss calc
+            slots_sorted = torch.cat([att[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            l_bce = F.binary_cross_entropy(slots_sorted,rings_sorted,reduction='none').sum(axis=1).mean()
+
+            Y_pred_sorted = torch.cat([Y_pred[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+            Y_true_sorted = torch.cat([Y[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
+
+            l_mse = torch.nn.MSELoss(reduction='none')(Y_pred_sorted,Y_true_sorted).sum(axis=1).mean()
+
+            # Calculate the loss
+            li = l_bce + alpha*l_mse
         
         li.backward()
         clip_val=1
@@ -209,10 +219,13 @@ def train(model,
         
         opt.step()
         opt.zero_grad()
-
-        losses['tot'].append(float(li))
-        losses['bce'].append(float(l_bce))
-        losses['mse'].append(float(l_mse))
+        
+        if discovery_mode==True:
+            losses['mse'].append(float(li))
+        else:
+            losses['tot'].append(float(li))
+            losses['bce'].append(float(l_bce))
+            losses['mse'].append(float(l_mse))
         
         if i % plot_every == 0:
             print('iter',i,', loss',li.detach().cpu().numpy(),', lr',opt.param_groups[0]['lr'])  
@@ -373,7 +386,7 @@ if __name__ == "__main__":
     train(model, 
           **opt,
           losses=losses,
-          N_obj=kwargs,
+          kwargs=kwargs,
           device=device,
           plot_every=plot_every, 
           save_every=save_every,

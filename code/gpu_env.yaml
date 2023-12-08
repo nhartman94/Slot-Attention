@@ -19,6 +19,7 @@ dependencies:
 - pytorch==2.0.0 # for data loading
 - scikit-learn
 - uproot
-#- pip:
+- pip:
+    - -e /u/saumi/multi-object-detection/scclevr
 #  - distrax
 #  - -e madjax/
