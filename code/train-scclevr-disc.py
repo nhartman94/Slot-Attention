@@ -14,9 +14,9 @@ import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
 # custom code for this repo
-from model import InvariantSlotAttention, SlotAttentionPosEmbed
-from data import make_batch
-from plotting import plot_chosen_slots, plot_kslots, plot_kslots_iters, plot_kslots_grads
+from model import InvariantSlotAttention_disc, SlotAttentionPosEmbed
+from plotting import plot_chosen_slots, plot_kslots, plot_kslots_iters, plot_kslots_grads, plot_slots_with_alpha
+from data_scclevr import makeRings 
 
 # file IO packages
 import os
@@ -123,8 +123,7 @@ def train(model,
           plot_every=250, 
           save_every=1000,
           color='C0',cmap='Blues',
-          modelDir='.',figDir='',
-          discovery_mode=False):
+          modelDir='.',figDir=''):
     '''
     train
     (Function from Lukas)
@@ -161,6 +160,7 @@ def train(model,
     max_n_rings = kwargs['N_clusters']
     resolution = model.resolution
     kwargs['device'] = device
+    N_obj = kwargs['N_clusters'] # pass to makeRing fct
 
     start = len(losses)
     for i in range(start,start+Ntrain):
@@ -171,73 +171,36 @@ def train(model,
         
         opt.param_groups[0]['lr'] = learning_rate
         
-        X, Y, mask = make_batch(N_events=bs, **kwargs)
-        #print(X.shape)
-        #print(Y.shape)
-        #print(mask.shape)
-        
-        queries, att, Y_pred = model(X)
-        
-        li = 0
-        if discovery_mode==True:
-            # compare sum of attentions to actual picture!
-            li = torch.nn.functional.mse_loss(X, np.sum(att, axis=1))
-        else:
-         
-            # Reshape the target mask to be flat in the pixels (same shape as att)
-            flat_mask = mask.reshape(-1,max_n_rings, np.prod(resolution))      
-            with torch.no_grad():
+        X, mask, _, Y = makeRings(N_img=bs, N_obj=N_obj, device=device)
+        queries, att, Y_pred, alpha = model(X)
 
-                att_ext  = torch.tile(att.unsqueeze(2), dims=(1,1,max_n_rings,1)) 
-                mask_ext = torch.tile(flat_mask.unsqueeze(1),dims=(1,k_slots,1,1)) 
+        # compute reconstruced image X_reco
+        att_signal = att * alpha
+        new_shape = np.array([att_signal.shape[:-1], resolution]).flatten()
+        att_signal = torch.reshape(att_signal, tuple(new_shape))
+        X_reco = torch.sum(att_signal, axis=1)[:, None, ::] # why multiply by X???  torch.sum(att_signal*X, axis=1)
 
-                pairwise_cost = F.binary_cross_entropy(att_ext,mask_ext,reduction='none').mean(axis=-1)
+        # loss
+        l_mse = torch.nn.MSELoss(reduction='none')(X, X_reco).sum(axis=(-1, -2)).mean()
 
-                # pairwise_cost = comb_loss(att,flat_mask,Y,Y_pred,alpha)
-                indices = hungarian_matching(pairwise_cost)
+        # Calculate the loss
+        li = l_mse
 
-            # Apply the sorting to the predict
-            bis=torch.arange(bs).to(device)
-            indices=indices.to(device)
-
-            # Loss calc
-            slots_sorted = torch.cat([att[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-            rings_sorted = torch.cat([flat_mask[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-            l_bce = F.binary_cross_entropy(slots_sorted,rings_sorted,reduction='none').sum(axis=1).mean()
-
-            Y_pred_sorted = torch.cat([Y_pred[bis,indices[:,0,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-            Y_true_sorted = torch.cat([Y[bis,indices[:,1,ri]].unsqueeze(1) for ri in range(max_n_rings)],dim=1)
-
-            l_mse = torch.nn.MSELoss(reduction='none')(Y_pred_sorted,Y_true_sorted).sum(axis=1).mean()
-
-            # Calculate the loss
-            li = l_bce + alpha*l_mse
-        
         li.backward()
         clip_val=1
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_val)
-        
+
         opt.step()
         opt.zero_grad()
-        
-        if discovery_mode==True:
-            losses['mse'].append(float(li))
-        else:
-            losses['tot'].append(float(li))
-            losses['bce'].append(float(l_bce))
-            losses['mse'].append(float(l_mse))
-        
+
+        losses['mse'].append(float(l_mse))
+
         if i % plot_every == 0:
             print('iter',i,', loss',li.detach().cpu().numpy(),', lr',opt.param_groups[0]['lr'])  
             iEvt = 0
 
             # losses, mask, att_img, Y_true, Y_pred
-            plot_chosen_slots(losses,
-                              mask[iEvt].sum(axis=0), 
-                              slots_sorted[iEvt].reshape(max_n_rings,*resolution),
-                              Y_true_sorted[iEvt],
-                              Y_pred_sorted[iEvt],
-                              figname=f'{figDir}/loss_chosen_slots.jpg')
+            plot_slots_with_alpha(losses, X[iEvt], att_signal[iEvt], Y[iEvt], figname=f'{figDir}/loss_chosen_slots.jpg')
             
         if (i % save_every == 0) and modelDir:
             torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')

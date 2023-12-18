@@ -338,7 +338,7 @@ if __name__ == "__main__":
     # Define the architecture 
     hps['device'] = device # the model also needs to 
 
-    model = InvariantSlotAttention(**hps).to(device)
+    model = InvariantSlotAttention_disc(**hps).to(device)
 
     # Load in the weights 
     if warm_start:

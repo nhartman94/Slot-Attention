@@ -186,3 +186,53 @@ def plot_kslots_grads(model,grads, iEvt, color='C2',cmap='Greens',figname=''):
         plt.savefig(figname)    
     plt.show()
     plt.close()
+
+def plot_slots_with_alpha(losses, X, att_signal, Y, cmap = 'Blues', figname=''):
+    X = X.detach().cpu()
+    Y = Y.detach().cpu()
+    att_signal = att_signal.detach().cpu()
+    N_obj = Y.shape[0]
+    fig, axs = plt.subplots(1,3+N_obj, figsize=(3*(N_obj + 3) ,3))
+
+    # loss
+    for k,v in losses.items():
+        if (len(v)!=0):
+            axs[0].plot(v,label=k)
+    axs[0].set_xlabel('Iters')
+    axs[0].set_ylabel('Loss')
+    axs[0].legend()
+    axs[0].set_box_aspect(1)
+
+    # truth
+    extent= [-0.5, 0.5]*2
+
+    img = axs[1].imshow(X[0].detach().cpu(), origin='lower', cmap=cmap, extent=extent)
+    axs[1].set_title("Truth")
+    # colorbar:
+    divider = make_axes_locatable(axs[1])
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+    fig.colorbar(img, cax=cax, orientation='vertical')
+
+    # rings
+    for j in range(1, N_obj+3):
+        axs[j].scatter(Y[:, 0], Y[:, 1], marker="x", c='r')
+        for yi in Y.cpu().numpy():
+            circle = Circle(yi[:2],yi[2],fill=False,color='r')
+            axs[j].add_patch(circle)
+        axs[j].set_ylim(extent[0], extent[1])
+        axs[j].set_xlim(extent[0], extent[1])
+
+    # reco
+    for k, j in enumerate(range(2, 3+N_obj)):
+        axs[j].imshow(att_signal.numpy()[k],  origin='lower', cmap=cmap, extent=extent)
+        axs[j].set_title(r"$\alpha \cdot \mathrm{att}$"+" (slot {})".format(k))
+        # colorbar:
+        divider = make_axes_locatable(axs[j])
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        fig.colorbar(img, cax=cax, orientation='vertical')
+
+    plt.tight_layout()
+    if figname:
+        plt.savefig(figname)
+    plt.show()
+    plt.close()

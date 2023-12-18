@@ -57,11 +57,11 @@ SLURM_DIR = "slurm_scripts"
 if not os.path.exists(SLURM_DIR):
     os.mkdir(SLURM_DIR)
 
-# SA: 15.12.23
-# train on 
+# SA: 16.11.23
+# train on scCLEVR dataset
 
-cID = f'isa-discovery-mode2'
-cmd = f"python train-scclevr-disc.py --config configs/{cID}.yaml --warm_start"
+cID = f'isa-alpha3_scclevr'
+cmd = f"python train-scclevr.py --config configs/{cID}.yaml --warm_start"
 cmd += " --warm_start_config configs/isa-cosine-decay.yaml --device cuda:0 "
 writeSlurmFile(cmd, cID, useGPU=True)
 os.system(f"sbatch {SLURM_DIR}/{cID}.sh")
