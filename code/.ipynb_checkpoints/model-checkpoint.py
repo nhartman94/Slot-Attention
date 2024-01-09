@@ -8,6 +8,7 @@ Code from Lukas Heinrich
 import numpy as np
 import torch
 from torch.nn import init
+import torch.nn as nn
 
 def build_grid(resolution):
     '''
@@ -243,6 +244,123 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         
         else:
             return queries, att, wts
+    
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, activation, pre_act):
+        super(ResidualBlock, self).__init__()
+        self.activation = activation
+        self.pre_act = pre_act
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.conv_res = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
+
+    def forward(self, inputs, inputs_scaled):
+        x = inputs
+        y = self.conv1(x)
+        y = self.bn1(y)
+        y = self.activation(y)
+        y = self.conv2(y)
+        y = self.bn2(y)
+        if self.pre_act:
+            y = self.activation(y)
+            
+        x = self.conv_res(x)
+        x = x + y
+        if not self.pre_act:
+            x = self.activation(x)
+            
+        x = torch.cat((x, inputs_scaled), dim=1)
+        return x
+
+class Encoder_resnet(nn.Module):
+    def __init__(self, nPixels, latent_dim, nMaxClusters, activation, use_vae, pre_act, filters):
+        super(Encoder_resnet, self).__init__()
+        #self.initial_conv = nn.Conv2d(3, filters[0], kernel_size=3, stride=1, padding=1)
+        self.res_blocks = nn.ModuleList()
+        self.activation = activation
+        self.use_vae = use_vae
+        
+        self.res_block11 = ResidualBlock(3,16, activation, pre_act)
+        self.res_block12 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block13 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block14 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block15 = ResidualBlock(19,16, activation, pre_act)
+
+        self.res_block21 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block22 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block23 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block24 = ResidualBlock(19,16, activation, pre_act)
+        self.res_block25 = ResidualBlock(19,16, activation, pre_act)
+
+        self.res_block31 = ResidualBlock(19,32, activation, pre_act)
+        self.res_block32 = ResidualBlock(35,32, activation, pre_act)
+        self.res_block33 = ResidualBlock(35,32, activation, pre_act)
+        self.res_block34 = ResidualBlock(35,32, activation, pre_act)
+        self.res_block35 = ResidualBlock(35,32, activation, pre_act)
+        
+        self.pooling = nn.MaxPool2d(kernel_size=2)
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear((filters[-1]+3) * nPixels * nPixels // (2 ** len(filters))**2, 256, bias=False)
+       
+        self.bn_dense = nn.BatchNorm1d(256)
+        self.sampling_layer = Sampling()
+
+        if use_vae:
+            self.z_mean_full = nn.Linear(256, nMaxClusters*latent_dim)
+            self.z_log_var_full = nn.Linear(256,nMaxClusters*latent_dim)
+        else:
+            self.z_full = nn.Linear(256, nMaxClusters*latent_dim)
+            
+    def forward(self, inputs):
+        x = inputs
+        inputs_scaled = inputs
+        #inputs_scaled = F.interpolate(x, size=(nPixels, nPixels))
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block11(x,inputs_scaled)
+        x = self.res_block12(x,inputs_scaled)
+        x = self.res_block13(x,inputs_scaled)
+        x = self.res_block14(x,inputs_scaled)
+        x = self.res_block15(x,inputs_scaled)  
+        x = self.pooling(x)
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block21(x,inputs_scaled)
+        x = self.res_block22(x,inputs_scaled)
+        x = self.res_block23(x,inputs_scaled)
+        x = self.res_block24(x,inputs_scaled)
+        x = self.res_block25(x,inputs_scaled)
+        x = self.pooling(x)
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block31(x,inputs_scaled)
+        x = self.res_block32(x,inputs_scaled)
+        x = self.res_block33(x,inputs_scaled)
+        x = self.res_block34(x,inputs_scaled)
+        x = self.res_block35(x,inputs_scaled)
+        x = self.pooling(x)
+
+        x = self.flatten(x)
+        #print(x.shape)
+        x = self.dense(x)
+        
+        x = self.bn_dense(x)
+        x = self.activation(x)
+
+        if self.use_vae:
+            z_mean_full = self.z_mean_full(x)
+            z_log_var_full = self.z_log_var_full(x)
+            z_full = self.sampling_layer(z_mean_full, z_log_var_full)
+            return z_mean_full, z_log_var_full, z_full
+        else:
+            z_full = self.z_full(x)
+            return z_full, z_full, z_full
+
+
+
+
 
 
 
@@ -255,6 +373,7 @@ class InvariantSlotAttention(torch.nn.Module):
                  varhigh=0.05,
                  k_slots=3, 
                  num_conv_layers=3,
+                 which_encoder='',
                  hidden_dim=32, 
                  query_dim=32, 
                  n_iter=2,
@@ -295,8 +414,12 @@ class InvariantSlotAttention(torch.nn.Module):
         for i in range(num_conv_layers-1):
             cnn_layers += [torch.nn.ReLU(), torch.nn.Conv2d(hidden_dim,**kwargs)] 
         cnn_layers.append(torch.nn.ReLU())
-
-        self.CNN_encoder = torch.nn.Sequential(*cnn_layers)
+          
+        self.CNN_encoder = torch.nn.Sequential(*cnn_layers) # 3 CNN layers by default
+        if which_encoder=='ResNet':
+            self.CNN_encoder = Encoder_resnet(npixel)
+            
+          
             
         # Grid + query init
         self.abs_grid = self.build_grid()
