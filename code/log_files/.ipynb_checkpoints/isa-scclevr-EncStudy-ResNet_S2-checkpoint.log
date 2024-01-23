@@ -1,0 +1,44 @@
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+Using ResNet_Sanz2 to encode data.
+Starting from an earlier training from configs/isa-cosine-decay.yaml
+Traceback (most recent call last):
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train-scclevr-encoder-study.py", line 389, in <module>
+    train(model, 
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train-scclevr-encoder-study.py", line 191, in train
+    queries, att, Y_pred = model(X)
+  File "/mpcdf/soft/SLE_15/packages/skylake/pytorch/gpu-cuda-11.6/anaconda_3_2021.11-2021.11/2.0.0/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/model.py", line 534, in forward
+    encoded_data = self.CNN_encoder(data) # Apply the CNN encoder
+  File "/mpcdf/soft/SLE_15/packages/skylake/pytorch/gpu-cuda-11.6/anaconda_3_2021.11-2021.11/2.0.0/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/model.py", line 1005, in forward
+    x = x.reshape([32, 16, 32, 32]) # horribly hard coded I know
+RuntimeError: shape '[32, 16, 32, 32]' is invalid for input of size 4194304
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-scclevr-EncStudy-ResNet_S2
+Node list: ravg1062
+Job start: Wed Jan 10 16:01:40 CET 2024
+Job end:   Wed Jan 10 16:02:20 CET 2024
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-scclevr-EncStudy-ResNet_S2.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+8954024       isa-scclev      1             8                             00:00:40      1:0
+  
+Maximum memory per node: 0.503433 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 2.5 %
+  

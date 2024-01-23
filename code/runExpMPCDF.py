@@ -61,7 +61,13 @@ if not os.path.exists(SLURM_DIR):
 # train on scCLEVR dataset
 # encoder study
 
-cID = f'isa-scclevr-EncStudy-moreCNN'
+#cID = f'isa-scclevr-EncStudy-moreCNN'
+#cID = f'isa-scclevr-EncStudy-myResNet'
+
+#for cID in ['isa-scclevr-EncStudy-ResNet_S1', 'isa-scclevr-EncStudy-ResNet_S2']:
+#cID = 'isa-scclevr-EncStudy-ResNet_S1'
+#cID = f'isa-scclevr-EncStudy-moreCNN20'
+cID = f'isa-scclevr-EncStudy-myBigResNet'
 cmd = f"python train-scclevr-encoder-study.py --config configs/{cID}.yaml --warm_start"
 cmd += " --warm_start_config configs/isa-cosine-decay.yaml --device cuda:0 "
 writeSlurmFile(cmd, cID, useGPU=True)

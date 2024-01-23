@@ -1,0 +1,112 @@
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+models//isa-scclevr-EncStudy-ResNet_S2 already exists
+figures//isa-scclevr-EncStudy-ResNet_S2 already exists
+Using ResNet_Sanz2 to encode data.
+Starting from an earlier training from configs/isa-cosine-decay.yaml
+iter 250 , loss 0.80156255 , lr 1.4994217771805423e-05
+iter 500 , loss 0.43199262 , lr 2.9953760005996917e-05
+iter 750 , loss 0.3806044 , lr 4.484404028148584e-05
+iter 1000 , loss 0.34602404 , lr 5.963065021785413e-05
+iter 1250 , loss 0.32126227 , lr 7.427944801512113e-05
+iter 1500 , loss 0.27209198 , lr 8.875664641789544e-05
+iter 1750 , loss 0.22325951 , lr 0.00010302889991381646
+iter 2000 , loss 0.21233842 , lr 0.00011706339097770922
+iter 2250 , loss 0.19233826 , lr 0.00013082791517476767
+iter 2500 , loss 0.18255335 , lr 0.0001442909649383465
+iter 2750 , loss 0.16935703 , lr 0.00015742181184056923
+iter 3000 , loss 0.1695171 , lr 0.00017019058717695308
+iter 3250 , loss 0.14930114 , lr 0.00018256836068959774
+iter 3500 , loss 0.14889453 , lr 0.00019452721725717964
+iter 3750 , loss 0.14335743 , lr 0.00020604033138403634
+iter 4000 , loss 0.14923349 , lr 0.0002170820393249937
+iter 4250 , loss 0.13556534 , lr 0.00022762790868729492
+iter 4500 , loss 0.13281906 , lr 0.0002376548053560042
+iter 4750 , loss 0.1308885 , lr 0.00024714095759458514
+iter 5000 , loss 0.13588604 , lr 0.00025606601717798207
+iter 5250 , loss 0.13707088 , lr 0.0002518201118299413
+iter 5500 , loss 0.13536794 , lr 0.00024741720724952754
+iter 5750 , loss 0.12771639 , lr 0.00024286409239647507
+iter 6000 , loss 0.12780063 , lr 0.00023816778784387094
+iter 6250 , loss 0.122110836 , lr 0.00023333553495294033
+iter 6500 , loss 0.1335395 , lr 0.0002283747847073923
+iter 6750 , loss 0.1316042 , lr 0.00022329318622454325
+iter 7000 , loss 0.12787332 , lr 0.00021809857496093199
+iter 7250 , loss 0.12013065 , lr 0.0002127989606306142
+iter 7500 , loss 0.12387828 , lr 0.00020740251485476345
+iter 7750 , loss 0.12614012 , lr 0.00020191755856162393
+iter 8000 , loss 0.11951413 , lr 0.0001963525491562421
+iter 8250 , loss 0.12998652 , lr 0.00019071606747976113
+iter 8500 , loss 0.11365643 , lr 0.0001850168045783858
+iter 8750 , loss 0.117117845 , lr 0.00017926354830241924
+iter 9000 , loss 0.11640039 , lr 0.00017346516975603462
+iter 9250 , loss 0.11415024 , lr 0.00016763060961867566
+iter 9500 , loss 0.115473635 , lr 0.00016176886435917675
+iter 9750 , loss 0.11530587 , lr 0.0001558889723638603
+iter 10000 , loss 0.109108925 , lr 0.00015
+iter 10250 , loss 0.11682676 , lr 0.0001441110276361397
+iter 10500 , loss 0.11652834 , lr 0.00013823113564082325
+iter 10750 , loss 0.11511554 , lr 0.0001323693903813244
+iter 11000 , loss 0.118487544 , lr 0.0001265348302439654
+iter 11250 , loss 0.11363818 , lr 0.00012073645169758072
+iter 11500 , loss 0.11087539 , lr 0.0001149831954216142
+iter 11750 , loss 0.108360566 , lr 0.00010928393252023886
+iter 12000 , loss 0.10990408 , lr 0.0001036474508437579
+iter 12250 , loss 0.112449326 , lr 9.808244143837605e-05
+iter 12500 , loss 0.11150649 , lr 9.259748514523656e-05
+iter 12750 , loss 0.10690721 , lr 8.720103936938576e-05
+iter 13000 , loss 0.10845834 , lr 8.190142503906798e-05
+iter 13250 , loss 0.11126687 , lr 7.670681377545674e-05
+iter 13500 , loss 0.1030857 , lr 7.162521529260767e-05
+iter 13750 , loss 0.10753727 , lr 6.66644650470597e-05
+iter 14000 , loss 0.10777551 , lr 6.183221215612904e-05
+iter 14250 , loss 0.10720585 , lr 5.7135907603524936e-05
+iter 14500 , loss 0.106294855 , lr 5.2582792750472464e-05
+iter 14750 , loss 0.107317746 , lr 4.817988817005873e-05
+iter 15000 , loss 0.10237231 , lr 4.3933982822017876e-05
+iter 15250 , loss 0.10876183 , lr 3.9851623584647144e-05
+iter 15500 , loss 0.101688474 , lr 3.593910515999536e-05
+iter 15750 , loss 0.102354676 , lr 3.220246036788829e-05
+iter 16000 , loss 0.10112174 , lr 2.8647450843757897e-05
+iter 16250 , loss 0.102875635 , lr 2.5279558154618197e-05
+iter 16500 , loss 0.10429688 , lr 2.210397534688617e-05
+iter 16750 , loss 0.09973819 , lr 1.912559893908042e-05
+iter 17000 , loss 0.10528217 , lr 1.634902137174483e-05
+iter 17250 , loss 0.10404076 , lr 1.3778523926237827e-05
+iter 17500 , loss 0.103337355 , lr 1.1418070123306989e-05
+iter 17750 , loss 0.101539634 , lr 9.271299611627391e-06
+iter 18000 , loss 0.10100972 , lr 7.34152255572697e-06
+iter 18250 , loss 0.098273486 , lr 5.631714531952908e-06
+iter 18500 , loss 0.10346457 , lr 4.144511940348516e-06
+iter 18750 , loss 0.099566594 , lr 2.882207939515435e-06
+iter 19000 , loss 0.09790416 , lr 1.8467489107293509e-06
+iter 19250 , loss 0.09793095 , lr 1.0397314567610559e-06
+iter 19500 , loss 0.10372477 , lr 4.623999400308054e-07
+iter 19750 , loss 0.10348851 , lr 1.1564456389156485e-07
+iter 20000 , loss 0.10244979 , lr 0.0
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-scclevr-EncStudy-ResNet_S2
+Node list: ravg1060
+Job start: Wed Jan 10 16:38:00 CET 2024
+Job end:   Wed Jan 10 18:10:45 CET 2024
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-scclevr-EncStudy-ResNet_S2.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+8954127       isa-scclev      1             8                             01:32:45      0:0
+  
+Maximum memory per node: 3.113119 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 24.8 %
+  

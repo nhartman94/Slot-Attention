@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from torch.nn import init
 import torch.nn as nn
+import torch.nn.functional as F
 
 def build_grid(resolution):
     '''
@@ -245,120 +246,138 @@ class SlotAttentionPosEmbed(torch.nn.Module):
         else:
             return queries, att, wts
     
-class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, activation, pre_act):
-        super(ResidualBlock, self).__init__()
-        self.activation = activation
-        self.pre_act = pre_act
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_channels)
-        self.conv_res = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
+    
+class BasicBlock(nn.Module):
+    """Basic Residual Block"""
+    def __init__(self, inplanes, outplanes, stride=1, kernel_size=3, padding=0):
+        super().__init__()
+        self.conv1 = nn.Conv2d(inplanes, outplanes, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
+        self.bn1 = nn.BatchNorm2d(outplanes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(outplanes, outplanes, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
+        self.bn2 = nn.BatchNorm2d(outplanes)
+        
+        self.sampling = nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=1, bias=False)
+        self.stride = stride
+        
+        #self.linear output: 16*32*32 -> reshape it afterwards into [bs, 16, 32, 32]
+        
+        
+    def forward(self, x):
+        identity = x
 
-    def forward(self, inputs, inputs_scaled):
-        x = inputs
-        y = self.conv1(x)
-        y = self.bn1(y)
-        y = self.activation(y)
-        y = self.conv2(y)
-        y = self.bn2(y)
-        if self.pre_act:
-            y = self.activation(y)
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        
+        #print("identity: ", x.shape) # [bs, 8, 32, 32]
+        #print("out: ", out.shape)  # [bs, 16, 32, 32]
+        if(identity.shape!=out.shape):
+            identity = self.sampling(x) # is that ok? -> Nicole! 
             
-        x = self.conv_res(x)
-        x = x + y
-        if not self.pre_act:
-            x = self.activation(x)
-            
-        x = torch.cat((x, inputs_scaled), dim=1)
+        out += identity # this is the trick!!
+        out = self.relu(out)
+
+        return out
+    
+
+
+class ResNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.inplanes = 64
+        self.conv1 = nn.Conv2d(1, 8,kernel_size=5, stride=1, padding=2)
+        self.bn1 = nn.BatchNorm2d(8)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+        
+        # I choose my conv layers in a way that the final output will be [32, 32] still
+        
+        # FIRST STAGE -  capture basic features and patterns in the input while reducing its spatial resolution (second not needed?)
+        self.layer1 = BasicBlock(8, 8,kernel_size=5, stride=1, padding=2)
+        # SECOND STAGE - capture more complex features and patterns compared to the initial stage. The spatial dimensions are reduced, but the number of channels (depth) is increased.
+        self.layer2 = BasicBlock(8, 16, kernel_size=3, stride=1, padding=1)
+        # THIRD STAGE -  capture more abstract features and high-level representations, as the spatial dimensions continue to decrease.
+        self.layer3 = BasicBlock(16, 32, kernel_size=3, stride=1, padding=1)
+        # FOUTH STAGE- - capture very abstract and global features, consolidating the information learned from the previous stages.
+        self.layer4 = BasicBlock(32, 16, kernel_size=3, stride=1, padding=1)
+        
+        #self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        
+        
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        #x = self.avgpool(x)
+        #print("shape after resnet block: ", x.shape)
         return x
-
-class Encoder_resnet(nn.Module):
-    def __init__(self, nPixels, latent_dim, nMaxClusters, activation, use_vae, pre_act, filters):
-        super(Encoder_resnet, self).__init__()
-        #self.initial_conv = nn.Conv2d(3, filters[0], kernel_size=3, stride=1, padding=1)
-        self.res_blocks = nn.ModuleList()
-        self.activation = activation
-        self.use_vae = use_vae
+    
+class BigResNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.inplanes = 64
+        self.conv1 = nn.Conv2d(1, 8,kernel_size=5, stride=1, padding=2)
+        self.bn1 = nn.BatchNorm2d(8)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
         
-        self.res_block11 = ResidualBlock(3,16, activation, pre_act)
-        self.res_block12 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block13 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block14 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block15 = ResidualBlock(19,16, activation, pre_act)
-
-        self.res_block21 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block22 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block23 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block24 = ResidualBlock(19,16, activation, pre_act)
-        self.res_block25 = ResidualBlock(19,16, activation, pre_act)
-
-        self.res_block31 = ResidualBlock(19,32, activation, pre_act)
-        self.res_block32 = ResidualBlock(35,32, activation, pre_act)
-        self.res_block33 = ResidualBlock(35,32, activation, pre_act)
-        self.res_block34 = ResidualBlock(35,32, activation, pre_act)
-        self.res_block35 = ResidualBlock(35,32, activation, pre_act)
+        # I choose my conv layers in a way that the final output will be [32, 32] still
         
-        self.pooling = nn.MaxPool2d(kernel_size=2)
-        self.flatten = nn.Flatten()
-        self.dense = nn.Linear((filters[-1]+3) * nPixels * nPixels // (2 ** len(filters))**2, 256, bias=False)
-       
-        self.bn_dense = nn.BatchNorm1d(256)
-        self.sampling_layer = Sampling()
-
-        if use_vae:
-            self.z_mean_full = nn.Linear(256, nMaxClusters*latent_dim)
-            self.z_log_var_full = nn.Linear(256,nMaxClusters*latent_dim)
-        else:
-            self.z_full = nn.Linear(256, nMaxClusters*latent_dim)
-            
-    def forward(self, inputs):
-        x = inputs
-        inputs_scaled = inputs
-        #inputs_scaled = F.interpolate(x, size=(nPixels, nPixels))
-
-        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
-        x = self.res_block11(x,inputs_scaled)
-        x = self.res_block12(x,inputs_scaled)
-        x = self.res_block13(x,inputs_scaled)
-        x = self.res_block14(x,inputs_scaled)
-        x = self.res_block15(x,inputs_scaled)  
-        x = self.pooling(x)
-
-        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
-        x = self.res_block21(x,inputs_scaled)
-        x = self.res_block22(x,inputs_scaled)
-        x = self.res_block23(x,inputs_scaled)
-        x = self.res_block24(x,inputs_scaled)
-        x = self.res_block25(x,inputs_scaled)
-        x = self.pooling(x)
-
-        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
-        x = self.res_block31(x,inputs_scaled)
-        x = self.res_block32(x,inputs_scaled)
-        x = self.res_block33(x,inputs_scaled)
-        x = self.res_block34(x,inputs_scaled)
-        x = self.res_block35(x,inputs_scaled)
-        x = self.pooling(x)
-
-        x = self.flatten(x)
-        #print(x.shape)
-        x = self.dense(x)
+        # FIRST STAGE -  capture basic features and patterns in the input while reducing its spatial resolution (second not needed?)
+        self.layer11 = BasicBlock(8, 8,kernel_size=5, stride=1, padding=2)
+        self.layer12 = BasicBlock(8, 8,kernel_size=5, stride=1, padding=2)
+        self.layer13 = BasicBlock(8, 8,kernel_size=5, stride=1, padding=2)
+        self.layer14 = BasicBlock(8, 8,kernel_size=5, stride=1, padding=2)
+        # SECOND STAGE - capture more complex features and patterns compared to the initial stage. The spatial dimensions are reduced, but the number of channels (depth) is increased.
+        self.layer21 = BasicBlock(8, 16, kernel_size=3, stride=1, padding=1)
+        self.layer22 = BasicBlock(16, 16, kernel_size=3, stride=1, padding=1)
+        self.layer23 = BasicBlock(16, 16, kernel_size=3, stride=1, padding=1)
+        self.layer24 = BasicBlock(16, 16, kernel_size=3, stride=1, padding=1)
+        # THIRD STAGE -  capture more abstract features and high-level representations, as the spatial dimensions continue to decrease.
+        self.layer31 = BasicBlock(16, 32, kernel_size=3, stride=1, padding=1)
+        self.layer32 = BasicBlock(32, 32, kernel_size=3, stride=1, padding=1)
+        self.layer33 = BasicBlock(32, 32, kernel_size=3, stride=1, padding=1)
+        self.layer34 = BasicBlock(32, 32, kernel_size=3, stride=1, padding=1)
+        # FOUTH STAGE- - capture very abstract and global features, consolidating the information learned from the previous stages.
+        self.layer4 = BasicBlock(32, 16, kernel_size=3, stride=1, padding=1)
         
-        x = self.bn_dense(x)
-        x = self.activation(x)
+        #self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        
+        
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
 
-        if self.use_vae:
-            z_mean_full = self.z_mean_full(x)
-            z_log_var_full = self.z_log_var_full(x)
-            z_full = self.sampling_layer(z_mean_full, z_log_var_full)
-            return z_mean_full, z_log_var_full, z_full
-        else:
-            z_full = self.z_full(x)
-            return z_full, z_full, z_full
+        x = self.layer11(x)
+        x = self.layer12(x)
+        x = self.layer13(x)
+        x = self.layer14(x)
+        x = self.layer21(x)
+        x = self.layer22(x)
+        x = self.layer23(x)
+        x = self.layer24(x)
+        x = self.layer31(x)
+        x = self.layer32(x)
+        x = self.layer33(x)
+        x = self.layer34(x)
+        x = self.layer4(x)
 
-
+        #x = self.avgpool(x)
+        #print("shape after resnet block: ", x.shape)
+        return x
 
 
 
@@ -416,8 +435,15 @@ class InvariantSlotAttention(torch.nn.Module):
         cnn_layers.append(torch.nn.ReLU())
           
         self.CNN_encoder = torch.nn.Sequential(*cnn_layers) # 3 CNN layers by default
-        if which_encoder=='ResNet':
-            self.CNN_encoder = Encoder_resnet(npixel)
+        if which_encoder=='MyResNet':
+            self.CNN_encoder = ResNet()
+        elif which_encoder=='MyBigResNet':
+            self.CNN_encoder = BigResNet()
+        elif which_encoder=='ResNet_Sanz1':
+            self.CNN_encoder = Encoder_resnet_S1()
+        elif which_encoder=='ResNet_Sanz2':
+            self.CNN_encoder = Encoder_resnet_S2()
+        print("Using " + which_encoder + " to encode data.")
             
           
             
@@ -835,3 +861,207 @@ class InvariantSlotAttention_disc(torch.nn.Module):
         
         else:
             return queries, att, wts, alpha
+        
+
+class mish(nn.Module):
+    def forward(self, x):
+        return x * torch.tanh(torch.nn.functional.softplus(x))
+
+
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, activation, pre_act):
+        super(ResidualBlock, self).__init__()
+        if activation == 'mish':
+            activation = mish()
+        self.activation = activation
+        self.pre_act = pre_act
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.conv_res = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
+
+    def forward(self, inputs, inputs_scaled):
+        x = inputs
+        y = self.conv1(x)
+        y = self.bn1(y)
+        y = self.activation(y)
+        y = self.conv2(y)
+        y = self.bn2(y)
+        if self.pre_act:
+            y = self.activation(y)
+            
+        x = self.conv_res(x)
+        x = x + y
+        if not self.pre_act:
+            x = self.activation(x)
+            
+        x = torch.cat((x, inputs_scaled), dim=1)
+        return x
+
+class Encoder_resnet_S1(nn.Module):
+    def __init__(self, nPixels=32, latent_dim=128, nMaxClusters=2, activation=mish(), use_vae=False, pre_act=False, filters=[16,16,32]):
+        super(Encoder_resnet_S1, self).__init__()
+        #self.initial_conv = nn.Conv2d(3, filters[0], kernel_size=3, stride=1, padding=1)
+        self.res_blocks = nn.ModuleList()
+        self.activation = activation
+        self.use_vae = use_vae
+        
+        self.res_block11 = ResidualBlock(1,16, activation, pre_act)
+        self.res_block12 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block13 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block14 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block15 = ResidualBlock(17,16, activation, pre_act)
+
+        self.res_block21 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block22 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block23 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block24 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block25 = ResidualBlock(17,16, activation, pre_act)
+
+        self.res_block31 = ResidualBlock(17,32, activation, pre_act)
+        self.res_block32 = ResidualBlock(33,32, activation, pre_act)
+        self.res_block33 = ResidualBlock(33,32, activation, pre_act)
+        self.res_block34 = ResidualBlock(33,32, activation, pre_act)
+        self.res_block35 = ResidualBlock(33,32, activation, pre_act)
+        
+        self.pooling = nn.MaxPool2d(kernel_size=2)
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear((filters[-1]+1) * nPixels * nPixels // (2 ** len(filters))**2, 256, bias=False)
+       
+        self.bn_dense = nn.BatchNorm1d(256)
+        #self.sampling_layer = Sampling()
+
+        if use_vae:
+            self.z_mean_full = nn.Linear(256, nMaxClusters*latent_dim)
+            self.z_log_var_full = nn.Linear(256,nMaxClusters*latent_dim)
+        else:
+            self.z_full = nn.Linear(256, nMaxClusters*latent_dim)
+            
+            
+        # Sara's adjustment ideas
+        self.upsample = nn.ConvTranspose2d(33, 16, 8, stride=8, padding=0) # is this a smart thing to do?
+        self.lastdense = nn.Linear(256, 16*32*32)
+
+    def forward(self, inputs):
+        x = inputs
+        inputs_scaled = inputs
+        #inputs_scaled = F.interpolate(x, size=(nPixels, nPixels))
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block11(x,inputs_scaled)
+        x = self.res_block12(x,inputs_scaled)
+        x = self.res_block13(x,inputs_scaled)
+        x = self.res_block14(x,inputs_scaled)
+        x = self.res_block15(x,inputs_scaled)  
+        x = self.pooling(x)
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block21(x,inputs_scaled)
+        x = self.res_block22(x,inputs_scaled)
+        x = self.res_block23(x,inputs_scaled)
+        x = self.res_block24(x,inputs_scaled)
+        x = self.res_block25(x,inputs_scaled)
+        x = self.pooling(x)
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block31(x,inputs_scaled)
+        x = self.res_block32(x,inputs_scaled)
+        x = self.res_block33(x,inputs_scaled)
+        x = self.res_block34(x,inputs_scaled)
+        x = self.res_block35(x,inputs_scaled)
+        x = self.pooling(x)
+        
+        x = self.upsample(x) # option 1... upsampling with CNN from [bs, 33, 4,4] to [bs, 16, 32, 32]
+        return x
+
+
+class Encoder_resnet_S2(nn.Module):
+    def __init__(self, nPixels=32, latent_dim=128, nMaxClusters=2, activation=mish(), use_vae=False, pre_act=False, filters=[16,16,32]):
+        super(Encoder_resnet_S2, self).__init__()
+        #self.initial_conv = nn.Conv2d(3, filters[0], kernel_size=3, stride=1, padding=1)
+        self.res_blocks = nn.ModuleList()
+        self.activation = activation
+        self.use_vae = use_vae
+        
+        self.res_block11 = ResidualBlock(1,16, activation, pre_act)
+        self.res_block12 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block13 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block14 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block15 = ResidualBlock(17,16, activation, pre_act)
+
+        self.res_block21 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block22 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block23 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block24 = ResidualBlock(17,16, activation, pre_act)
+        self.res_block25 = ResidualBlock(17,16, activation, pre_act)
+
+        self.res_block31 = ResidualBlock(17,32, activation, pre_act)
+        self.res_block32 = ResidualBlock(33,32, activation, pre_act)
+        self.res_block33 = ResidualBlock(33,32, activation, pre_act)
+        self.res_block34 = ResidualBlock(33,32, activation, pre_act)
+        self.res_block35 = ResidualBlock(33,32, activation, pre_act)
+        
+        self.pooling = nn.MaxPool2d(kernel_size=2)
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear((filters[-1]+1) * nPixels * nPixels // (2 ** len(filters))**2, 256, bias=False)
+       
+        self.bn_dense = nn.BatchNorm1d(256)
+        #self.sampling_layer = Sampling()
+
+        if use_vae:
+            self.z_mean_full = nn.Linear(256, nMaxClusters*latent_dim)
+            self.z_log_var_full = nn.Linear(256,nMaxClusters*latent_dim)
+        else:
+            self.z_full = nn.Linear(256, nMaxClusters*latent_dim)
+            
+            
+        # Sara's adjustment ideas
+        self.upsample = nn.ConvTranspose2d(33, 16, 8, stride=8, padding=0) # is this a smart thing to do?
+        self.lastdense = nn.Linear(256, 16*32*32)
+
+    def forward(self, inputs):
+        x = inputs
+        inputs_scaled = inputs
+        #inputs_scaled = F.interpolate(x, size=(nPixels, nPixels))
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block11(x,inputs_scaled)
+        x = self.res_block12(x,inputs_scaled)
+        x = self.res_block13(x,inputs_scaled)
+        x = self.res_block14(x,inputs_scaled)
+        x = self.res_block15(x,inputs_scaled)  
+        x = self.pooling(x)
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block21(x,inputs_scaled)
+        x = self.res_block22(x,inputs_scaled)
+        x = self.res_block23(x,inputs_scaled)
+        x = self.res_block24(x,inputs_scaled)
+        x = self.res_block25(x,inputs_scaled)
+        x = self.pooling(x)
+
+        inputs_scaled = F.interpolate(inputs_scaled, size=(x.shape[2], x.shape[3]))
+        x = self.res_block31(x,inputs_scaled)
+        x = self.res_block32(x,inputs_scaled)
+        x = self.res_block33(x,inputs_scaled)
+        x = self.res_block34(x,inputs_scaled)
+        x = self.res_block35(x,inputs_scaled)
+        x = self.pooling(x)
+        #x = self.upsample(x) # option 1... upsampling with CNN from [bs, 33, 4,4] to [bs, 16, 32, 32]
+        #return x
+        
+        x = self.flatten(x)
+        #print(x.shape)
+        x = self.dense(x)
+        
+        x = self.bn_dense(x)
+        x = self.activation(x)
+        
+        # Option 2: just add one last dense layer and reshape it!
+        x = self.lastdense(x)
+        x = x.reshape([inputs.shape[0], 16, 32, 32]) # horribly hard coded I know
+        
+        return x
+
+
