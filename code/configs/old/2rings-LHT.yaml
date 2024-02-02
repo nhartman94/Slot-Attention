@@ -1,0 +1,10 @@
+data:
+  N_clusters: 2
+  isRing: true
+hps:
+  hidden_dim: 16
+  k_slots: 3
+  query_dim: 16
+opt:
+  Ntrain: 200000
+  bs: 256

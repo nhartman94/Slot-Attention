@@ -1,0 +1,16 @@
+data:
+  N_clusters: 2
+  isRing: true
+hps:
+  hidden_dim: 16
+  k_slots: 3
+  query_dim: 128 
+  softmax_T: default
+  learn_init: true
+opt:
+  lr: 3.e-5 
+  Ntrain: 80000
+  decay_steps: 20000
+  clip_val: 1
+  weightDecaySchedule: exp
+  bs: 256
