@@ -1,0 +1,25 @@
+name: gpu_env
+channels:
+- nvidia
+- pytorch # needs to be before conda-forge
+- conda-forge
+dependencies:
+- python=3.9
+- pip
+- setuptools
+- matplotlib
+- numpy
+- pandas 
+- jupyter
+- notebook
+- jupyterlab
+- cuda-nvcc
+- cudatoolkit=11.6
+- cudnn=8.8
+- pytorch==2.0.0 # for data loading
+- scikit-learn
+- uproot
+- pip:
+    - -e /u/saumi/multi-object-detection/scclevr
+#  - distrax
+#  - -e madjax/
