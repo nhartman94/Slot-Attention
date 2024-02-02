@@ -1,0 +1,32 @@
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+models//isa-scclevr-tracks already exists
+figures//isa-scclevr-tracks already exists
+Using MyBigResNet to encode data.
+Training starting from freshly initialized weights
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-scclevr-tracks
+Node list: ravg1048
+Job start: Tue Jan 23 11:33:25 CET 2024
+Job end:   Tue Jan 23 11:34:13 CET 2024
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-scclevr-tracks.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+9091969       isa-scclev      1             8                             00:00:48      0:0
+  
+Maximum memory per node: 0.246219 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 1.0 %
+  

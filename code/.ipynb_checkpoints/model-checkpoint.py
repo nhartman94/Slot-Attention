@@ -324,10 +324,10 @@ class ResNet(nn.Module):
         return x
     
 class BigResNet(nn.Module):
-    def __init__(self):
+    def __init__(self, n_channels=1):
         super().__init__()
         self.inplanes = 64
-        self.conv1 = nn.Conv2d(1, 8,kernel_size=5, stride=1, padding=2)
+        self.conv1 = nn.Conv2d(n_channels, 8,kernel_size=5, stride=1, padding=2)
         self.bn1 = nn.BatchNorm2d(8)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
@@ -393,6 +393,7 @@ class InvariantSlotAttention(torch.nn.Module):
                  k_slots=3, 
                  num_conv_layers=3,
                  which_encoder='',
+                 n_input_channels=1,
                  hidden_dim=32, 
                  query_dim=32, 
                  n_iter=2,
@@ -438,7 +439,7 @@ class InvariantSlotAttention(torch.nn.Module):
         if which_encoder=='MyResNet':
             self.CNN_encoder = ResNet()
         elif which_encoder=='MyBigResNet':
-            self.CNN_encoder = BigResNet()
+            self.CNN_encoder = BigResNet(n_channels=n_input_channels)
         elif which_encoder=='ResNet_Sanz1':
             self.CNN_encoder = Encoder_resnet_S1()
         elif which_encoder=='ResNet_Sanz2':

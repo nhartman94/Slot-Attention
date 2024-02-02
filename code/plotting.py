@@ -11,8 +11,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Circle
+import math
 
-def plot_chosen_slots(losses, mask, att_img, Y_true, Y_pred, color='C0',cmap='Blues',figname=''):
+def plot_chosen_slots(losses, mask, att_img, Y_true, Y_pred, color='C0',cmap='Blues',figname='', obj_type='ring'):
     n_rings = att_img.shape[0]
     fig, axs = plt.subplots(1,n_rings+2,figsize=(3*(n_rings + 2) ,2.5))
 
@@ -44,8 +45,13 @@ def plot_chosen_slots(losses, mask, att_img, Y_true, Y_pred, color='C0',cmap='Bl
     for yi in Y_true.cpu().numpy():
     
         axi.scatter(*yi[:2],marker='x',color=c_true)
-        circle = Circle(yi[:2],yi[2],fill=False,color=c_true)
-        axi.add_patch(circle)
+        if obj_type=='ring':
+            circle = Circle(yi[:2],yi[2],fill=False,color=c_true)
+            axi.add_patch(circle)
+        elif obj_type=='track':
+            x2 = yi[0] + math.cos(math.radians(yi[2]))
+            y2 = yi[1] + math.sin(math.radians(yi[2]))
+            axi.plot([yi[0], x2], [yi[1], y2], color=c_true)
         
         axi.set_xlim(-0.5,0.5)
         axi.set_ylim(-0.5,0.5)
@@ -53,13 +59,24 @@ def plot_chosen_slots(losses, mask, att_img, Y_true, Y_pred, color='C0',cmap='Bl
     for axi,yi,oi in zip(axs[2:],Y_true.cpu().numpy(),Y_pred.detach().cpu().numpy()):
         
         axi.scatter(*yi[:2],marker='x',color=c_true)
-        circle = Circle(yi[:2],yi[2],fill=False,color=c_true)
-        axi.add_patch(circle)
-        
         axi.scatter(*oi[:2],marker='x',color=c_pred)
-        circle = Circle(oi[:2],oi[2],fill=False,color=c_pred)
-        axi.add_patch(circle)
+        
+        if obj_type == 'ring':
+            circle = Circle(yi[:2],yi[2],fill=False,color=c_true)
+            axi.add_patch(circle)
 
+            circle = Circle(oi[:2],oi[2],fill=False,color=c_pred)
+            axi.add_patch(circle)
+            
+        elif obj_type=='track':
+            x2 = yi[0] + math.cos(math.radians(yi[2]))
+            y2 = yi[1] + math.sin(math.radians(yi[2]))
+            axi.plot([yi[0], x2], [yi[1], y2], color=c_true)
+            
+            x2 = oi[0] + math.cos(math.radians(oi[2]))
+            y2 = oi[1] + math.sin(math.radians(oi[2]))
+            axi.plot([oi[0], x2], [oi[1], y2], color=c_pred)
+            
         axi.set_xlim(-0.5,0.5)
         axi.set_ylim(-0.5,0.5)
         

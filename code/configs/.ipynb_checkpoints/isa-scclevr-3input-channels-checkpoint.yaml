@@ -1,0 +1,17 @@
+data:
+  N_clusters: 2
+  isRing: true
+  n_channels: 3
+hps:
+  hidden_dim: 16
+  k_slots: 3
+  query_dim: 128
+  pixel_mult: 0.2 
+  num_conv_layers: 10
+  which_encoder: "MyBigResNet"
+  n_channels: 3 # also change in data!! Sorry this is badly coded 
+opt:
+  lr: 3.e-4
+  Ntrain: 20_000
+  bs: 256
+  alpha: 3

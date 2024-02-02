@@ -124,7 +124,7 @@ def train(model,
           warmup_steps=5_000,
           alpha=1,
           losses = {'tot':[],'bce':[],'mse':[]},
-          kwargs={'isRing': True, 'N_clusters':2},
+          kwargs={'obj_type': 'ring', 'N_clusters':2, 'n_channels':1},
           clip_val = 1,
           device='cpu',
           plot_every=250, 
@@ -165,7 +165,11 @@ def train(model,
     
     k_slots = model.k_slots
     max_n_rings = kwargs['N_clusters']
+    obj_type = kwargs['obj_type']
+    n_channels = kwargs['n_channels'] # 1 or 3
     resolution = model.resolution
+    xlow = model.xlow
+    xhigh = model.xhigh
     kwargs['device'] = device
     N_obj = kwargs['N_clusters'] # pass to makeRing fct
 
@@ -179,13 +183,27 @@ def train(model,
         opt.param_groups[0]['lr'] = learning_rate
         
         # make scclevr data
-        rings = scclevr.RingsBinaryUniform(N_obj) # two rings per imagne
-        event_images, object_images, n_objects, object_features =  rings.gen_events(bs)
+        if obj_type == 'ring':
+            rings = scclevr.RingsBinaryUniform(N_obj) # two rings per imagne
+            event_images, object_images, n_objects, object_features =  rings.gen_events(bs)
+        elif obj_type == 'track': 
+            tracks = scclevr.TracksBinaryUniform(N_obj) # two tracks per imagne
+            event_images, object_images, n_objects, object_features =  tracks.gen_events(bs)
         event_images, object_images, n_objects, object_features =  _convert_into_pytorch_tensors(event_images, object_images, n_objects, object_features, device)
         # assign shorter names
         X = event_images
         mask = object_images
         Y = object_features
+        if n_channels==3: # x and y as grid (channel)
+            ranges = [np.linspace(xlow, xhigh, num=res) for res in resolution]
+            Xb, Yb = np.meshgrid(*ranges, sparse=False, indexing="xy")
+            Xbtmp = Xb[np.newaxis, np.newaxis, :, :]
+            Ybtmp = Yb[np.newaxis, np.newaxis, :, :]
+            Xbtmp = np.repeat(Xbtmp,len(event_images),axis=0)
+            Ybtmp= np.repeat(Ybtmp,len(event_images),axis=0)
+
+            X = np.concatenate([event_images,Xbtmp,Ybtmp], axis=1) # (bs, 3, 32, 32) with not only E but x and y as grid (channel)
+            
 
         
         queries, att, Y_pred = model(X)
@@ -240,7 +258,8 @@ def train(model,
                               slots_sorted[iEvt].reshape(max_n_rings,*resolution),
                               Y_true_sorted[iEvt],
                               Y_pred_sorted[iEvt],
-                              figname=f'{figDir}/loss_chosen_slots.jpg')
+                              figname=f'{figDir}/loss_chosen_slots.jpg',
+                              obj_type=obj_type)
             
         if (i % save_every == 0) and modelDir:
             torch.save(model.state_dict(), f'{modelDir}/m_{i}.pt')
