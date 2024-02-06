@@ -1,0 +1,36 @@
+/raven/u/saumi/multi-object-detection/Slot-Attention/code
+Using MyBigResNet to encode data.
+Training starting from freshly initialized weights
+Traceback (most recent call last):
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train-scclevr-encoder-study.py", line 408, in <module>
+    train(model, 
+  File "/raven/u/saumi/multi-object-detection/Slot-Attention/code/train-scclevr-encoder-study.py", line 169, in train
+    n_channels = kwargs['n_channels'] # 1 or 3
+KeyError: 'n_channels'
+                                  
+================================= 
+Global information about the job: 
+================================= 
+  
+Job owner: saumi(54773)
+Job name:  isa-scclevr-tracks-alpha0-longTraining
+Node list: ravg1021
+Job start: Fri Feb  2 08:33:43 CET 2024
+Job end:   Fri Feb  2 08:34:24 CET 2024
+Work dir:  /raven/u/saumi/multi-object-detection/Slot-Attention/code
+Command:   /raven/u/saumi/multi-object-detection/Slot-Attention/code/slurm_scripts/isa-scclevr-tracks-alpha0-longTraining.sh
+  
+  
+  
+==========================================================================================
+Information on jobsteps (Note: MaxRSS/AveRSS is the maximum/average over all 
+tasks of the per-task memory high-water marks; cf. "man sacct"): 
+==========================================================================================
+  
+JobID            JobName NNodes NTasks  NCPUS       MaxRSS       AveRSS    Elapsed ExitCode
+------------- ---------- ------ ------ ------ ------------ ------------ ---------- --------
+9204897       isa-scclev      1             8                             00:00:41      1:0
+  
+Maximum memory per node: 0.228622 GB (defined as MaxRSS*Ntasks/NNodes)
+CPU utilization: 1.8 %
+  

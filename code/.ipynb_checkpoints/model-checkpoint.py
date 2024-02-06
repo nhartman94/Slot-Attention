@@ -393,7 +393,7 @@ class InvariantSlotAttention(torch.nn.Module):
                  k_slots=3, 
                  num_conv_layers=3,
                  which_encoder='',
-                 n_input_channels=1,
+                 n_channels=1,
                  hidden_dim=32, 
                  query_dim=32, 
                  n_iter=2,
@@ -439,7 +439,7 @@ class InvariantSlotAttention(torch.nn.Module):
         if which_encoder=='MyResNet':
             self.CNN_encoder = ResNet()
         elif which_encoder=='MyBigResNet':
-            self.CNN_encoder = BigResNet(n_channels=n_input_channels)
+            self.CNN_encoder = BigResNet(n_channels=n_channels)
         elif which_encoder=='ResNet_Sanz1':
             self.CNN_encoder = Encoder_resnet_S1()
         elif which_encoder=='ResNet_Sanz2':

@@ -124,7 +124,8 @@ def train(model,
           warmup_steps=5_000,
           alpha=1,
           losses = {'tot':[],'bce':[],'mse':[]},
-          kwargs={'obj_type': 'ring', 'N_clusters':2, 'n_channels':1},
+          kwargs={'obj_type': 'ring', 'N_clusters':2},
+          n_channels=1, # 1 or 3 (E,x,y) as input channels
           clip_val = 1,
           device='cpu',
           plot_every=250, 
@@ -166,7 +167,6 @@ def train(model,
     k_slots = model.k_slots
     max_n_rings = kwargs['N_clusters']
     obj_type = kwargs['obj_type']
-    n_channels = kwargs['n_channels'] # 1 or 3
     resolution = model.resolution
     xlow = model.xlow
     xhigh = model.xhigh
@@ -201,8 +201,8 @@ def train(model,
             Ybtmp = Yb[np.newaxis, np.newaxis, :, :]
             Xbtmp = np.repeat(Xbtmp,len(event_images),axis=0)
             Ybtmp= np.repeat(Ybtmp,len(event_images),axis=0)
-
-            X = np.concatenate([event_images,Xbtmp,Ybtmp], axis=1) # (bs, 3, 32, 32) with not only E but x and y as grid (channel)
+            # X: (bs, 3, 32, 32) with not only E but x and y as grid (channel):
+            X = torch.cat([event_images, torch.FloatTensor(Xbtmp).to(device),torch.FloatTensor(Ybtmp).to(device)], axis=1) 
             
 
         
@@ -359,6 +359,13 @@ if __name__ == "__main__":
 
     # Define the architecture 
     hps['device'] = device # the model also needs to 
+    
+    # Define how many input channels the encoder needs
+    n_channels = 1
+    try: # older versions of config files don't have this variable
+        n_channels = hps['n_channels'] # 3 or 1 input channels (E,x,y)
+    except:
+        pass
 
     model = InvariantSlotAttention(**hps).to(device)
 
@@ -409,6 +416,7 @@ if __name__ == "__main__":
           **opt,
           losses=losses,
           kwargs=kwargs,
+          n_channels=n_channels,
           device=device,
           plot_every=plot_every, 
           save_every=save_every,

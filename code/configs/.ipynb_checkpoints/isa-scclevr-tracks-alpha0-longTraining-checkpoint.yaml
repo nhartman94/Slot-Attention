@@ -8,6 +8,7 @@ hps:
   pixel_mult: 0.2 
   num_conv_layers: 10
   which_encoder: "MyBigResNet"
+  n_channels: 1
 opt:
   lr: 3.e-4
   Ntrain: 100_000

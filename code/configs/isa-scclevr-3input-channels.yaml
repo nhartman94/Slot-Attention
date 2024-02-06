@@ -1,7 +1,6 @@
 data:
   N_clusters: 2
-  isRing: true
-  n_channels: 3
+  obj_type: 'ring'
 hps:
   hidden_dim: 16
   k_slots: 3
@@ -9,7 +8,7 @@ hps:
   pixel_mult: 0.2 
   num_conv_layers: 10
   which_encoder: "MyBigResNet"
-  n_channels: 3 # also change in data!! Sorry this is badly coded 
+  n_channels: 3
 opt:
   lr: 3.e-4
   Ntrain: 20_000
